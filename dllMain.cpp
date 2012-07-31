@@ -29,7 +29,6 @@ BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 //#############################################################################
 // Callback-Funktion, die periodisch von X-Plane aufgerufen wird, wenn vom
 // Plugin so gefordert...
-// fuer Anzeige MFD benutzt
 //#############################################################################
 PLUGIN_API float myfLoopCallback( float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop, int inCounter, void *inRefcon)
 {
@@ -47,7 +46,6 @@ PLUGIN_API float myfLoopCallback( float inElapsedSinceLastCall, float inElapsedT
 //#############################################################################
 // Callback-Funktion, die periodisch von X-Plane aufgerufen wird, wenn vom
 // Plugin so gefordert...
-// fuer Steuerung der LED's genutzt
 //#############################################################################
 PLUGIN_API float myfLEDLoopCallback( float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop, int inCounter, void *inRefcon)
 {
@@ -147,7 +145,6 @@ PLUGIN_API void XPluginDisable(void)
 {
   if( pmCl )
   {
-    pmCl->setPluginEnabled( false );                                 // sag bescheid!
     pmCl->logLine( "XPluginDisable recived!" );
   }
 }
@@ -159,7 +156,6 @@ PLUGIN_API int XPluginEnable(void)
 {
   if( pmCl )
   {
-    pmCl->setPluginEnabled( true );                                 // sag bescheid!
     pmCl->logLine( "XPluginEnable recived!" );
   }
 	return 1;

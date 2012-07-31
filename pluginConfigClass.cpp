@@ -8,52 +8,46 @@
 using namespace std;
 using namespace std::tr1;
 
-//#############################################################################
-// Definition der Regulaeren Arusdruecke fuer die Syntax der Config-Datei
-//#############################################################################
-const regex debugName( "^debug$", regex_constants::icase );
-const regex blinkName( "^blinkInterval$", regex_constants::icase );
-const regex fireAName( "^fire_a$", regex_constants::icase );
-const regex fireBName( "^fire_b$", regex_constants::icase );
-const regex fireDName( "^fire_d$", regex_constants::icase );
-const regex fireEName( "^fire_e$", regex_constants::icase );
-const regex t1Name( "^t1$", regex_constants::icase );
-const regex t2Name( "^t2$", regex_constants::icase );
-const regex t3Name( "^t3$", regex_constants::icase );
-const regex pov2Name( "^pov2$", regex_constants::icase );
-const regex clutchName( "^clutch$", regex_constants::icase );
-const regex fireButtonName( "^fire_button$", regex_constants::icase);
-const regex throttleAxisName( "^throttle_axis$", regex_constants::icase );
+const regex debugName( "^debug$", std::regex_constants::icase );
+const regex blinkName( "^blinkInterval$", std::regex_constants::icase );
+const regex fireAName( "^fire_a$", std::regex_constants::icase );
+const regex fireBName( "^fire_b$", std::regex_constants::icase );
+const regex fireDName( "^fire_d$", std::regex_constants::icase );
+const regex fireEName( "^fire_e$", std::regex_constants::icase );
+const regex t1Name( "^t1$", std::regex_constants::icase );
+const regex t2Name( "^t2$", std::regex_constants::icase );
+const regex t3Name( "^t3$", std::regex_constants::icase );
+const regex pov2Name( "^pov2$", std::regex_constants::icase );
+const regex clutchName( "^clutch$", std::regex_constants::icase );
+const regex fireButtonName( "^fire_button$", std::regex_constants::icase);
+const regex throttleAxisName( "^throttle_axis$", std::regex_constants::icase );
 // Special-LED's
 // GEARS
-const regex landingGearName( "^landing_gear_led$", regex_constants::icase );
-const regex landingGearTrans("^landing_gear_trans$", regex_constants::icase );
-const regex landingGearUp("^landing_gear_up$", regex_constants::icase );
-const regex landingGearDown("^landing_gear_down$", regex_constants::icase );
-const regex landingGearFail("^landing_gear_fail$", regex_constants::icase );
-// LANDING LIGHT
-const regex landingLightName( "^landing_light_led$", regex_constants::icase );
-const regex landingLightOn( "^landing_light_on$", regex_constants::icase );
-const regex landingLightOff( "^landing_light_off$", regex_constants::icase );
+const regex landingGearName( "^landing_gear_led$", std::regex_constants::icase );
+const regex landingGearTrans("^landing_gear_trans$", std::regex_constants::icase );
+const regex landingGearUp("^landing_gear_up$", std::regex_constants::icase );
+const regex landingGearDown("^landing_gear_down$", std::regex_constants::icase );
+const regex landingGearFail("^landing_gear_fail$", std::regex_constants::icase );
 // FLAPS
-const regex flapsStatusName( "^flaps_status_led$", regex_constants::icase );
-const regex flapsStatusOut( "^flaps_status_out$", regex_constants::icase );
-const regex flapsStatusUp( "^flaps_status_up$", regex_constants::icase );
-const regex flapsStatusFull( "^flaps_status_full$", regex_constants::icase );
-const regex flapsStatusFail( "^flaps_status_fail$", regex_constants::icase );
+const regex flapsStatusName( "^flaps_status_led$", std::regex_constants::icase );
+const regex flapsStatusOut( "^flaps_status_out$", std::regex_constants::icase );
+const regex flapsStatusUp( "^flaps_status_up$", std::regex_constants::icase );
+const regex flapsStatusFull( "^flaps_status_full$", std::regex_constants::icase );
+const regex flapsStatusFail( "^flaps_status_fail$", std::regex_constants::icase );
 // SIM ist Running?
-const regex isRunningStatusName( "^sim_is_running_led$", regex_constants::icase );
-const regex isRunningStatusPaused( "^sim_is_paused$", regex_constants::icase );
-const regex isRunningStatusRunning( "^sim_is_running$", regex_constants::icase );
+const regex isRunningStatusName( "^sim_is_running_led$", std::regex_constants::icase );
+const regex isRunningStatusPaused( "^sim_is_paused$", std::regex_constants::icase );
+const regex isRunningStatusRunning( "^sim_is_running$", std::regex_constants::icase );
+
 // Values
 const regex numberValue( "^[[:digit:]]+$" );
-const regex boolValue( "true|1", regex_constants::icase );
-const regex redValue( "red", regex_constants::icase );
-const regex greenValue( "green", regex_constants::icase );
-const regex amberValue( "amber", regex_constants::icase );
-const regex offValue( "off|0|false", regex_constants::icase );
-const regex blinkValue( "blink", regex_constants::icase );
-const regex statusLedValue( "fire_a|fire_b|fire_d|fire_e|t1|t2|t3|pov2|clutch|fire_button", regex_constants::icase );
+const regex boolValue( "true|1", std::regex_constants::icase );
+const regex redValue( "red", std::regex_constants::icase );
+const regex greenValue( "green", std::regex_constants::icase );
+const regex amberValue( "amber", std::regex_constants::icase );
+const regex offValue( "off|0|false", std::regex_constants::icase );
+const regex blinkValue( "blink", std::regex_constants::icase );
+const regex statusLedValue( "fire_a|fire_b|fire_d|fire_e|t1|t2|t3|pov2|clutch|fire_button", std::regex_constants::icase );
 // etc
 const regex commentLine("^#.*");                                             // Kommentarzele, ignorieren
 const regex comment("#.*$");                                                 // Kommentar, löschen
@@ -65,15 +59,20 @@ const regex trimStrings( "(^\\s*)|(\\s*$)" );                                // 
 // Standart Konstruktor
 //#############################################################################
 pluginConfigClass::pluginConfigClass(void):
-  pluginEnabled( false ), landingGear( NONE_LED ),flapsStatus( NONE_LED ),debug(false)
+landingGear( NONE_LED ),flapsStatus( NONE_LED )
 {
+// default nach Compiler-einstellung...
+#ifdef _DEBUG
+  debug = true;
+#else
+  debug = false;
+#endif
 }
 //#############################################################################
 // Konstruktor mit Angabe der Konfigurationsdatei
 //#############################################################################
 pluginConfigClass::pluginConfigClass( std::string& configFile ) : 
   blinkInterval(1000),debug(false),configFileName( configFile ),
-  pluginEnabled( false ),
   landingGear( NONE_LED ),flapsStatus( NONE_LED ),simIsRunning( NONE_LED )
 {
 }
@@ -176,12 +175,6 @@ void pluginConfigClass::printConfigValues(void)
     logLine( string( "Flaps LED FULL      :" ) + sayLED( flapsStatus ) + string( " ") + sayColor( flapsLedStats[ SA_OK2 ] ));
     logLine( string( "Flaps LED FAIL      :" ) + sayLED( flapsStatus ) + string( " ") + sayColor( flapsLedStats[ SA_FAILED ] ));
   }
-
-  if( landingLight != NONE_LED )
-  {
-    logLine( string( "Landing LED ON      :" ) + sayLED( landingLight ) + string( " ") + sayColor( landingLightLedStats[ SA_OK1 ] ));
-    logLine( string( "Landing LED OFF     :" ) + sayLED( landingLight ) + string( " ") + sayColor( landingLightLedStats[ SA_OK2 ] ));
-  }
  
   if( simIsRunning != NONE_LED )
   {
@@ -209,9 +202,6 @@ void pluginConfigClass::initDefaults(void)
     // Fahrwerk
     landingGearLedStats[ static_cast<saSigStat>(i) ].first  = SA_OFF;
     landingGearLedStats[ static_cast<saSigStat>(i) ].second = SA_NOBLINK;
-    // landing light
-    landingLightLedStats[ static_cast<saSigStat>(i) ].first  = SA_OFF;
-    landingLightLedStats[ static_cast<saSigStat>(i) ].second = SA_NOBLINK;
     // Klappen
     flapsLedStats[ static_cast<saSigStat>(i) ].first  = SA_OFF;
     flapsLedStats[ static_cast<saSigStat>(i) ].second = SA_NOBLINK;
@@ -229,10 +219,6 @@ void pluginConfigClass::overrideSpecials(void)
   if( landingGear != NONE_LED )                                           // exist Special-LED?
   {
     ledStat[ landingGear ] = landingGearLedStats[ SA_OK1 ];
-  }
-  if( landingLight != NONE_LED )
-  {
-    ledStat[ landingLight ] = landingLightLedStats[ SA_OK1 ];
   }
   if( flapsStatus != NONE_LED )                                           // Ist die aktiv?
   {
@@ -317,31 +303,6 @@ bool pluginConfigClass::computeValuePair( string& pName, string& pValue )
     landingGearLedStats[ SA_FAILED ].first = getColor( pValue );
     if( regex_search( pValue, blinkValue ))
       landingGearLedStats[ SA_FAILED ].second = SA_BLINK;
-  }
-  // LANDING LIGHT?
-  else if( regex_match( pName, landingLightName ) )
-  {
-    led = getLEDFromString( pValue );
-    if( led != NONE_LED )
-    {
-      landingLight = led;
-    }
-    else
-      errorLine( string("<pluginConfigClass::computeValuePair>: unknown LED in <") + pName + string(">" ) );
-  }
-  // Landing Light OFF?
-  else if( regex_match( pName, landingLightOff ) )
-  {
-    landingLightLedStats[ SA_OK2 ].first = getColor( pValue );
-    if( regex_search( pValue, blinkValue ))
-      landingLightLedStats[ SA_OK2 ].second = SA_BLINK;
-  }
-  // Landing Lights ON?
-  else if( regex_match( pName, landingLightOn ) )
-  {
-    landingLightLedStats[ SA_OK1 ].first = getColor( pValue );
-    if( regex_search( pValue, blinkValue ))
-      landingLightLedStats[ SA_OK1 ].second = SA_BLINK;
   }
   // FLAPS LED?
   else if( regex_match( pName, flapsStatusName ) )

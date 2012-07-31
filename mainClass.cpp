@@ -33,6 +33,28 @@ wchar_t *displayFormat[14] =
  L" %03d.%02d  %03d.%02d*\0",                                        // NAV X Herz selektiert zum verstellen
 };
 
+// pattern to display transponder
+wchar_t *displayFormatTransponder[10] = 
+{
+ L"CODE : %d %d %d %d \0",
+ L"CODE :[%d]%d %d %d \0",
+ L"CODE : %d[%d]%d %d \0",
+ L"CODE : %d %d[%d]%d \0",
+ L"CODE : %d %d %d[%d]\0",
+ L"CODE :>%d<%d %d %d \0",
+ L"CODE : %d>%d<%d %d \0",
+ L"CODE : %d %d>%d<%d \0",
+ L"CODE : %d %d %d>%d<\0",
+ L"                   \0"
+};
+
+// pattern to display transponder mode
+wchar_t *displayFormatTransponderMode[3] = 
+{
+ L"MODE :  %s  \0",
+ L"MODE : [%s] \0",
+ L"MODE : >%s< \0"
+};
 
 
 //#############################################################################
@@ -47,11 +69,11 @@ mainClass::mainClass(void)
 // und Daten
 //#############################################################################
 mainClass::mainClass( string& logFileName, string& configFileName ) : 
-  debug(false), pPluginConfigClass(), plogThreadClass(0),groundSpeedRef(0),
+  debug(false),pPluginConfigClass(), plogThreadClass(0),groundSpeedRef(0),
   indicatedAirSpeedRef(0), verticalSpeedRef(0),elevationRev(0),
   com1Ref(0),com2Ref(0),com1StbyRef(0),com2StbyRef(0),
   nav1Ref(0),nav2Ref(0),nav1StbyRef(0),nav2StbyRef(0),
-  currCursorSelect(saSEL_NONE),upDownMode(saUD_SELECT),clickMode(saCLICK_CHANGE)
+  currCursorSelect(saSEL_NONE),upDownMode(saUD_SELECT),clickMode(saCLICK_CHANGE),transponder()
 {
   try
   {
@@ -123,6 +145,7 @@ bool mainClass::initProgrammData( void )
     groundSpeedRef         = XPLMFindDataRef("sim/flightmodel/position/groundspeed");      // float
     indicatedAirSpeedRef   = XPLMFindDataRef("sim/flightmodel/position/indicated_airspeed2"); // float
     verticalSpeedRef       = XPLMFindDataRef("sim/flightmodel/position/vh_ind_fpm2");      // float
+    //verticalSpeedRef       = XPLMFindDataRef("sim/flightmodel/position/vh_ind");           // float
     elevationRev           = XPLMFindDataRef("sim/flightmodel/position/elevation");        // float
     indicatedBaroElevRef   = XPLMFindDataRef("sim/flightmodel/misc/h_ind");                // float
     com1Ref                = XPLMFindDataRef("sim/cockpit/radios/com1_freq_hz");           //int
@@ -139,6 +162,11 @@ bool mainClass::initProgrammData( void )
     landingLightsOn        = XPLMFindDataRef("sim/cockpit/electrical/landing_lights_on");  //bool Landelichter AN?
     flapsDeploy            = XPLMFindDataRef("sim/cockpit2/controls/flap_handle_deploy_ratio"); // float Gesamt-Status Klappen
     simIsPaused            = XPLMFindDataRef("sim/time/paused");                           // int Sim ist in den ferien
+	// Added by Cmoirv
+	dme_dist_nav1          = XPLMFindDataRef("sim/cockpit/radios/nav1_dme_dist_m");
+	dme_dist_nav2          = XPLMFindDataRef("sim/cockpit/radios/nav2_dme_dist_m");
+	barometer_setting      = XPLMFindDataRef("sim/cockpit/misc/barometer_setting");
+	//End added by Cmoirv
     for( i=0; i< MAXPAGES; i++ )
     {
       oldGearDeploy[i] = 5.0;
@@ -160,32 +188,6 @@ bool mainClass::initProgrammData( void )
 }
 
 //#############################################################################
-// Erlaube oder vierbiete das DISPLAY-PLUGIN
-//#############################################################################
-bool mainClass::setPluginEnabled( bool _enabled)
-{
-  int activePage;
-
-  pPluginConfigClass->setPluginEnabled( _enabled );
-  if( !_enabled && psaitekX52ProClass )                               // das im Display anzeigen
-  {
-    activePage = psaitekX52ProClass->getActivePage();                // was ist aktuell?
-    psaitekX52ProClass->setString( activePage, 0, wstring( L"  X-Plane MFD   " ) );
-    psaitekX52ProClass->setString( activePage, 1, wstring( L" Saitek X52 Pro " ) );
-    psaitekX52ProClass->setString( activePage, 2, wstring( L"    DISABLED    " ) );
-  }
-  return( _enabled );
-}
-
-//#############################################################################
-// Erlaube oder vierbiete das DISPLAY-PLUGIN
-//#############################################################################
-bool mainClass::getPluginEnabled( void )
-{
-  return( pPluginConfigClass->getPluginEnabled() );
-}
-
-//#############################################################################
 // Das Display Aktualisieren! Wir oft aufgerufen!
 //#############################################################################
 float mainClass::doMFDDisplay( void )
@@ -193,16 +195,18 @@ float mainClass::doMFDDisplay( void )
   char wbuffer[36];                                                  // Buffer für sprintf (Ok, nicht elegant aber einfach ;-))
   int displayFormatIndex1 = 0;                                       // Format-Index für Zeile 1
   int displayFormatIndex2 = 0;                                       // Format Index für Zeile 2
+  int displayTransponder = 0;
+  int displayTransponderMode = 0;
+
   static int oldActivePage;                                          // Merk ich mir mal...
   int activePage = psaitekX52ProClass->getActivePage();              // was ist aktuell?
 
-  if( ! psaitekX52ProClass ) return( 1.0 );                          // Kein Objekt, keine Aktion
-  if( ! pPluginConfigClass->getPluginEnabled() ) return( 1.0 );      // Plugin disabled!
   if( oldActivePage != activePage )                                  // Gab es einen Seitenwechsel?
   {
     oldActivePage = activePage;                                      // Bei Seitenwechsel soll nix selektiert sein...
     currCursorSelect = saSEL_NONE;
   }
+  if ( ! psaitekX52ProClass ) return( 1.0 );                         // Kein Objekt, keine Aktion
   if( activePage > 0 )                                               // Auf Seite 0 brauch ich das alles nicht!
   {                                                                  // die anderen Seiten brauchen einen Index für die Anzeige
     switch( currCursorSelect )                                       // wo steht der Cursor?
@@ -210,6 +214,15 @@ float mainClass::doMFDDisplay( void )
     case saSEL_NONE:                                                 // nichts selektiert
       displayFormatIndex1 = 0;
       displayFormatIndex2 = 0;
+	  if(transponder.getMode() == TRANSPONDER_OFF)						// manage transponder mode
+		{
+			displayTransponder = 9;
+		}
+		else
+		{
+			displayTransponder = 0;
+		}
+	  displayTransponderMode = 0;
       break;
     case saSEL_TOPLEFT:                                              // Markierung oben links (COM1,COM2)
       displayFormatIndex1 = 1;
@@ -235,12 +248,48 @@ float mainClass::doMFDDisplay( void )
       displayFormatIndex1 = 0;
       displayFormatIndex2 = 6;
       break;
+    case saSEL_TPR_THDS:											// transponder selection : thousands
+      displayTransponder = 1;
+	  displayTransponderMode = 0;
+      break;
+    case saSEL_TPR_HDS: 											// transponder selection : hundreds                                   
+      displayTransponder = 2;
+	  displayTransponderMode = 0;
+      break;
+    case saSEL_TPR_TENS:											// transponder selection : tens                                    
+      displayTransponder = 3;
+	  displayTransponderMode = 0;
+      break;
+    case saSEL_TPR_UNTS:											// transponder selection : units                                   
+      displayTransponder = 4;
+	  displayTransponderMode = 0;
+      break;
+    case saSEL_TPR_MODE:											// transponder selection : mode
+		if(transponder.getMode() == TRANSPONDER_OFF)
+		{
+			displayTransponder = 9;
+		}
+		else
+		{
+			displayTransponder = 0;
+		}
+      
+	  displayTransponderMode = 1;
+      break;
     }
   }
   if( upDownMode == saUD_VALUE )                                     // Markierung oder Selektion?
   {
     displayFormatIndex1 += 7;                                        // Selektionsmodus
     displayFormatIndex2 += 7;
+	if(currCursorSelect == saSEL_TPR_MODE)
+	{
+		displayTransponderMode +=1;
+	}
+	else
+	{
+		displayTransponder +=4;
+	}
   }
   // Display aktualisieren
  // Welche Seite ist aktiv?
@@ -287,6 +336,38 @@ float mainClass::doMFDDisplay( void )
     psaitekX52ProClass->setString( activePage, 2, wstring( (wchar_t *)&wbuffer[0] ) );
     return( float(1.5) );                                            // in eineinhalb Sekunden zurück
     break;
+  case 3:            // Added DME distances by Cmoirv                                             
+    psaitekX52ProClass->setString( activePage, 0, wstring( L" DME DISTANCES  " ) );
+	swprintf( (wchar_t *)&wbuffer[0], 16, L" NAV1 %03.1f NM \0", XPLMGetDataf( dme_dist_nav1 ));
+	psaitekX52ProClass->setString( activePage, 1, wstring( (wchar_t *)&wbuffer[0] ) );
+	swprintf( (wchar_t *)&wbuffer[0], 16, L" NAV2 %03.1f NM \0", XPLMGetDataf( dme_dist_nav2 ));
+	psaitekX52ProClass->setString( activePage, 2, wstring( (wchar_t *)&wbuffer[0] ) );
+
+    return( float(0.5) );                                            
+    break;
+  case 4:            // Added selection of QNH by Cmoirv                                           
+    psaitekX52ProClass->setString( activePage, 0, wstring( L" Baro Setting  \0" ) );
+	swprintf( (wchar_t *)&wbuffer[0], 16, L" %02.2f mmHg \0", XPLMGetDataf(barometer_setting) );
+	psaitekX52ProClass->setString( activePage, 1, wstring( (wchar_t *)&wbuffer[0] ) );
+	swprintf( (wchar_t *)&wbuffer[0], 16, L" %04.0f hPa \0", XPLMGetDataf(barometer_setting) * 254 * 0.133322368421);
+	psaitekX52ProClass->setString( activePage, 2, wstring( (wchar_t *)&wbuffer[0] ) );
+	
+    return( float(0.5) );                                            
+    break;// 
+  case 5:           // Added selection of squawk code and transponder mode by Cmoirv   
+    psaitekX52ProClass->setString( activePage, 0, wstring( L" Transponder  \0" ) );
+	swprintf( (wchar_t *)&wbuffer[0], 16, displayFormatTransponder[displayTransponder], 
+										transponder.getThousands(), 
+										transponder.getHundreds(), 
+										transponder.getTens(), 
+										transponder.getUnits());
+	psaitekX52ProClass->setString( activePage, 1, wstring( (wchar_t *)&wbuffer[0] ) );
+	swprintf( (wchar_t *)&wbuffer[0], 16, displayFormatTransponderMode[displayTransponderMode], 
+										transponder.getModeString());
+	psaitekX52ProClass->setString( activePage, 2, wstring( (wchar_t *)&wbuffer[0] ) );
+	
+    return( float(0.5) );                                           
+    break;
   default:
     logLine( "<mainClass::doMFDDisplay>: Invalid MFD-Page!" );
     return( float(3.0) );
@@ -313,16 +394,10 @@ float mainClass::doLEDStatus( float inElapsedSinceLastCall )
   }
 
   // landing gear? 
+  XPLMGetDatavf( gearDeploy, locGearDeploy, 0, 10 );                 // Alle 10 Fahrwerke kopiern
   led = pPluginConfigClass->getlandingGearLed();                     // wer könnte es sein?
   if( (led != NONE_LED) && (0 == XPLMGetDatai(gearIsSkid)) )         // wenn LED vorhanden und KEIN festes Fahrwerk
-  {
-    XPLMGetDatavf( gearDeploy, locGearDeploy, 0, 10 );               // Alle 10 Fahrwerke kopiern
     processGearLed( activePage, led );                               // Fahrwerks-LED steuern
-  }
-  // landing light? 
-  led = pPluginConfigClass->getLandingLightLed();
-  if( led != NONE_LED )                                               // wenn LED vorhanden
-    processLandingLightLed( activePage, led );                        // landelicht LED steuern
   // flaps? 
   led = pPluginConfigClass->getflapsGearLed();
   if( led != NONE_LED )                                               // wenn LED vorhanden
@@ -354,6 +429,8 @@ void mainClass::countValue( saDIRECTION dir )
 {
   int diff;
 
+  int old_freq = 0;
+
   if( dir == saCOUNT_UP )                                            // Das Vorzeichen gibt natürlich die Richtung vor
   {
     diff = 1;
@@ -373,11 +450,21 @@ void mainClass::countValue( saDIRECTION dir )
     {
       if( debug ) logLine( "<mainClass::countValue> ...COM1 standby, kHz!" );
       XPLMSetDatai( com1StbyRef, XPLMGetDatai(com1StbyRef) + diff  );// Stellen
+
+	  	  if(XPLMGetDatai(com1StbyRef) > 13697) // reach the higher limit
+		  XPLMSetDatai( com1StbyRef, XPLMGetDatai(com1StbyRef) - 1900);
+	  else if(XPLMGetDatai(com1StbyRef) < 11800) // reach the lower limit
+		  XPLMSetDatai( com1StbyRef, XPLMGetDatai(com1StbyRef) + 1900);
     }
     else if( 2 == psaitekX52ProClass->getActivePage() )              // COM2 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...COM2 standby, kHz!" );
       XPLMSetDatai( com2StbyRef, XPLMGetDatai(com2StbyRef) + diff  );// Stellen
+
+	  if(XPLMGetDatai(com2StbyRef) > 13697) // reach the higher limit
+		  XPLMSetDatai( com2StbyRef, XPLMGetDatai(com2StbyRef) - 1900);
+	  else if(XPLMGetDatai(com2StbyRef) < 11800) // reach the lower limit
+		  XPLMSetDatai( com2StbyRef, XPLMGetDatai(com2StbyRef) + 1900);
     }
   }
 
@@ -387,12 +474,24 @@ void mainClass::countValue( saDIRECTION dir )
     if( 1 == psaitekX52ProClass->getActivePage() )                   // COM1 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...COM1 standby, Hz!" );
+
+	  old_freq = XPLMGetDatai(com1StbyRef);
       XPLMSetDatai( com1StbyRef, XPLMGetDatai(com1StbyRef) + diff  );// Stellen
+
+	  if((XPLMGetDatai(com1StbyRef)/100)-(old_freq/100) == 1 || (XPLMGetDatai(com1StbyRef)/100)-(old_freq/100) == -1){
+		  XPLMSetDatai( com1StbyRef, XPLMGetDatai(com1StbyRef) - (diff) * 100);
+	  }
     }
     else if( 2 == psaitekX52ProClass->getActivePage() )              // COM2 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...COM2 standby, Hz!" );
+
+	  old_freq = XPLMGetDatai(com2StbyRef);
       XPLMSetDatai( com2StbyRef, XPLMGetDatai(com2StbyRef) + diff  );// Stellen
+
+	  if((XPLMGetDatai(com2StbyRef)/100)-(old_freq/100) == 1 || (XPLMGetDatai(com2StbyRef)/100)-(old_freq/100) == -1){
+		  XPLMSetDatai( com2StbyRef, XPLMGetDatai(com2StbyRef) - (diff) * 100);
+	  }
     }
   }
 
@@ -404,27 +503,75 @@ void mainClass::countValue( saDIRECTION dir )
     {
       if( debug ) logLine( "<mainClass::countValue> ...NAV1 standby, kHz!" );
       XPLMSetDatai( nav1StbyRef, XPLMGetDatai(nav1StbyRef) + diff  );// Stellen
+
+	  // Added restriction of the NAV frequencies by Cmoirv (to be closer to the reality)
+	  if(XPLMGetDatai(nav1StbyRef) > 11795) // reach the higher limit
+		  XPLMSetDatai( nav1StbyRef, XPLMGetDatai(nav1StbyRef) - 1000);
+	  else if(XPLMGetDatai(nav1StbyRef) < 10800) // reach the lower limit
+		  XPLMSetDatai( nav1StbyRef, XPLMGetDatai(nav1StbyRef) + 1000);
     }
     else if( 2 == psaitekX52ProClass->getActivePage() )              // NAV2 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...NAV2 standby, kHz!" );
       XPLMSetDatai( nav2StbyRef, XPLMGetDatai(nav2StbyRef) + diff  );// Stellen
+
+	  // Added restriction of the NAV frequencies by Cmoirv (to be closer to the reality)
+	  if(XPLMGetDatai(nav2StbyRef) > 11795) // reach the higher limit
+		  XPLMSetDatai( nav2StbyRef, XPLMGetDatai(nav2StbyRef) - 1000);
+	  else if(XPLMGetDatai(nav2StbyRef) < 10800) // reach the lower limit
+		  XPLMSetDatai( nav2StbyRef, XPLMGetDatai(nav2StbyRef) + 1000);
     }
   }
 
   else if( currCursorSelect == saSEL_BOTTOMRIGHT_RIGHT )             // entweder NAV1 oder NAV2 Standby Herz
   {
+	  diff*=5; // Added by Cmoirv : 50 kHz spacing
     if( debug ) logLine( "<mainClass::countValue> Value bottom right right value..." );
     if( 1 == psaitekX52ProClass->getActivePage() )                   // NAV1 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...NAV1 standby, Hz!" );
+
+	  old_freq = XPLMGetDatai(nav1StbyRef);
       XPLMSetDatai( nav1StbyRef, XPLMGetDatai(nav1StbyRef) + diff  );// Stellen
+
+	  // Added restriction of the NAV frequencies by Cmoirv (to be closer to the reality)
+	  if((XPLMGetDatai(nav1StbyRef)/100)-(old_freq/100) == 1 || (XPLMGetDatai(nav1StbyRef)/100)-(old_freq/100) == -1){
+		  XPLMSetDatai( nav1StbyRef, XPLMGetDatai(nav1StbyRef) - (diff/5) * 100);
+	  }
+	   
     }
     else if( 2 == psaitekX52ProClass->getActivePage() )              // NAV2 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...NAV2 standby, Hz!" );
+
+	  old_freq = XPLMGetDatai(nav2StbyRef);
       XPLMSetDatai( nav2StbyRef, XPLMGetDatai(nav2StbyRef) + diff  );// Stellen
+
+	  // Added restriction of the NAV frequencies by Cmoirv (to be closer to the reality)
+	  if((XPLMGetDatai(nav2StbyRef)/100)-(old_freq/100) == 1 || (XPLMGetDatai(nav2StbyRef)/100)-(old_freq/100) == -1){
+		  XPLMSetDatai( nav2StbyRef, XPLMGetDatai(nav2StbyRef) - (diff/5) * 100);
+	  }
     }
+  }// Added transponder selection by Cmoirv 
+  else if( currCursorSelect == saSEL_TPR_THDS ) 
+  {
+	  transponder.setThousands(transponder.getThousands() + diff);
+  }
+  else if( currCursorSelect == saSEL_TPR_HDS ) 
+  {
+	  transponder.setHundreds(transponder.getHundreds() + diff);
+  }
+  else if( currCursorSelect == saSEL_TPR_TENS ) 
+  {
+	  transponder.setTens(transponder.getTens() + diff);
+  }
+  else if( currCursorSelect == saSEL_TPR_UNTS ) 
+  {
+	  transponder.setUnits(transponder.getUnits() + diff);
+  }
+  else if( currCursorSelect == saSEL_TPR_MODE ) 
+  {
+	  transponder.setMode(transponder.getMode() + diff);
   }
 }
 
@@ -492,53 +639,130 @@ void mainClass::cycleSelection( saDIRECTION dir )
     return;
   }
   //##########################################################
-
-  switch( currCursorSelect )                                         // WAS ist denn schon selektiert?
-  {
-  case saSEL_NONE:                                                   // nix selektiert
-    if( dir == saCOUNT_UP )                                          // nach oben (raufzählen?)
-      currCursorSelect = saSEL_BOTTOMRIGHT_RIGHT;
-    else                                                             // oder nach unten
-      currCursorSelect = saSEL_TOPLEFT;
-    break;
-  case saSEL_TOPLEFT:                                                // IST: COM X Wechseln
-    if( dir == saCOUNT_UP )                                          // hoch oder runter?
-      currCursorSelect = saSEL_NONE;
-    else
-      currCursorSelect = saSEL_BOTTOMLEFT_LEFT;
-    break;
-  case saSEL_BOTTOMLEFT_LEFT:                                        // IST: Standby COM x Kiloherz
-    if( dir == saCOUNT_UP )
-      currCursorSelect = saSEL_TOPLEFT;
-    else
-      currCursorSelect = saSEL_BOTTOMLEFT_RIGHT;
-    break;
-  case saSEL_BOTTOMLEFT_RIGHT:                                       // IST: COM X Herz
-    if( dir == saCOUNT_UP )
-      currCursorSelect = saSEL_BOTTOMLEFT_LEFT;
-    else
-      currCursorSelect = saSEL_TOPRIGHT;
-    break;
-  case saSEL_TOPRIGHT:                                               // IST: NAV X wechseln
-    if( dir == saCOUNT_UP )
-      currCursorSelect = saSEL_BOTTOMLEFT_RIGHT;
-    else
-      currCursorSelect = saSEL_BOTTOMRIGHT_LEFT;
-    break;
-  case saSEL_BOTTOMRIGHT_LEFT:                                       // IST: NAV X Kiloherz
-    if( dir == saCOUNT_UP )
-      currCursorSelect = saSEL_TOPRIGHT;
-    else
-      currCursorSelect = saSEL_BOTTOMRIGHT_RIGHT;
-    break;
-  case saSEL_BOTTOMRIGHT_RIGHT:                                     // IST: NAV X Herz
-    if( dir == saCOUNT_UP )
-      currCursorSelect = saSEL_BOTTOMRIGHT_LEFT;
-    else
-      currCursorSelect = saSEL_NONE;
-    break;
+  switch(activePage){
+  case 1:
+  case 2:
+	  switch( currCursorSelect )                                         // WAS ist denn schon selektiert?
+	  {
+	  case saSEL_NONE:                                                   // nix selektiert
+		if( dir == saCOUNT_UP )                                          // nach oben (raufzählen?)
+		  currCursorSelect = saSEL_BOTTOMRIGHT_RIGHT;
+		else                                                             // oder nach unten
+		  currCursorSelect = saSEL_TOPLEFT;
+		break;
+	  case saSEL_TOPLEFT:                                                // IST: COM X Wechseln
+		if( dir == saCOUNT_UP )                                          // hoch oder runter?
+		  currCursorSelect = saSEL_NONE;
+		else
+		  currCursorSelect = saSEL_BOTTOMLEFT_LEFT;
+		break;
+	  case saSEL_BOTTOMLEFT_LEFT:                                        // IST: Standby COM x Kiloherz
+		if( dir == saCOUNT_UP )
+		  currCursorSelect = saSEL_TOPLEFT;
+		else
+		  currCursorSelect = saSEL_BOTTOMLEFT_RIGHT;
+		break;
+	  case saSEL_BOTTOMLEFT_RIGHT:                                       // IST: COM X Herz
+		if( dir == saCOUNT_UP )
+		  currCursorSelect = saSEL_BOTTOMLEFT_LEFT;
+		else
+		  currCursorSelect = saSEL_TOPRIGHT;
+		break;
+	  case saSEL_TOPRIGHT:                                               // IST: NAV X wechseln
+		if( dir == saCOUNT_UP )
+		  currCursorSelect = saSEL_BOTTOMLEFT_RIGHT;
+		else
+		  currCursorSelect = saSEL_BOTTOMRIGHT_LEFT;
+		break;
+	  case saSEL_BOTTOMRIGHT_LEFT:                                       // IST: NAV X Kiloherz
+		if( dir == saCOUNT_UP )
+		  currCursorSelect = saSEL_TOPRIGHT;
+		else
+		  currCursorSelect = saSEL_BOTTOMRIGHT_RIGHT;
+		break;
+	  case saSEL_BOTTOMRIGHT_RIGHT:                                     // IST: NAV X Herz
+		if( dir == saCOUNT_UP )
+		  currCursorSelect = saSEL_BOTTOMRIGHT_LEFT;
+		else
+		  currCursorSelect = saSEL_NONE;
+		break;
+	  }
+	  if( debug ) logLine( "<mainClass::cycleSelection>: " + getStringForSelectionName( currCursorSelect ) );
+	  break;
+  case 4: // Added count for QNH by Cmoirv
+	 if( dir == saCOUNT_UP )
+	 {
+		 XPLMSetDataf(barometer_setting, XPLMGetDataf(barometer_setting) + 0.01f);
+		 if(XPLMGetDataf(barometer_setting) > 31)
+		 {
+			XPLMSetDataf(barometer_setting, 31.0f);
+		 }
+	 }
+	else
+	{
+		XPLMSetDataf(barometer_setting, XPLMGetDataf(barometer_setting) - 0.01f);
+		 if(XPLMGetDataf(barometer_setting) < 28)
+		 {
+			 XPLMSetDataf(barometer_setting, 28.0f);
+		 }
+	 }
+	  break;
+  case 5: // Added transponder selection by Cmoirv
+	  switch( currCursorSelect )                                        
+	  {
+	  case saSEL_NONE:                                                   
+		if( dir == saCOUNT_UP )                                          
+		  currCursorSelect = saSEL_TPR_MODE;
+		else
+		{
+			if(transponder.getMode() != TRANSPONDER_OFF)
+			{
+				currCursorSelect = saSEL_TPR_THDS;
+			}
+			else
+			{
+				currCursorSelect = saSEL_TPR_MODE;
+			}	  
+		}
+			
+		break;
+	  case saSEL_TPR_THDS:                                                   
+		if( dir == saCOUNT_UP )                                          
+		  currCursorSelect = saSEL_NONE;
+		else                                                            
+		  currCursorSelect = saSEL_TPR_HDS;
+		break;
+	  case saSEL_TPR_HDS:                                                   
+		if( dir == saCOUNT_UP )                                          
+		  currCursorSelect = saSEL_TPR_THDS;
+		else                                                             
+		  currCursorSelect = saSEL_TPR_TENS;
+		break;
+	  case saSEL_TPR_TENS:                                                   
+		if( dir == saCOUNT_UP )                                          
+		  currCursorSelect = saSEL_TPR_HDS;
+		else                                                             
+		  currCursorSelect = saSEL_TPR_UNTS;
+		break;
+	  case saSEL_TPR_UNTS:                                                   
+		if( dir == saCOUNT_UP )                                          
+		  currCursorSelect = saSEL_TPR_TENS;
+		else                                                             
+		  currCursorSelect = saSEL_TPR_MODE;
+		break;
+	  case saSEL_TPR_MODE:    
+		  if(transponder.getMode() != TRANSPONDER_OFF)
+		  {
+			if( dir == saCOUNT_UP )                                          
+			  currCursorSelect = saSEL_TPR_UNTS;
+			else                                                             
+			  currCursorSelect = saSEL_NONE;
+		  }
+		  else
+			currCursorSelect = saSEL_NONE;
+		break;
+	  }
   }
-  if( debug ) logLine( "<mainClass::cycleSelection>: " + getStringForSelectionName( currCursorSelect ) );
   doMFDDisplay();                                                    // sofort anzeigen!
 }
 
@@ -588,6 +812,11 @@ void mainClass::softButton( DWORD btns )
   case saSEL_BOTTOMLEFT_RIGHT:                                       // Herz COM Standby ändern
   case saSEL_BOTTOMRIGHT_LEFT:                                       // Kiloherz NAV Standby ändern
   case saSEL_BOTTOMRIGHT_RIGHT:                                      // Herz NAV Standby ändern
+  case saSEL_TPR_THDS: 
+  case saSEL_TPR_HDS:                                      
+  case saSEL_TPR_TENS:                                       
+  case saSEL_TPR_UNTS:
+  case saSEL_TPR_MODE:
     if( btns & SoftButton_Select )                                   // Wechsel der Betriebsart (Ändern - zum Ändern wählen)
       if( upDownMode == saUD_SELECT )                                // Bin ich noch im Select-Mode?
         upDownMode = saUD_VALUE;                                     // dann mal in den Änderungsmodus
@@ -678,7 +907,7 @@ void mainClass::flushStream(void)
 //#############################################################################
 bool mainClass::processIsRunningLed( int page, saLED led )
 {
-  int locIsPaused = XPLMGetDatai( simIsPaused );                     // Ferien oder nicht?
+  int locIsPaused = XPLMGetDatai( simIsPaused );                         // Ferien oder nicht?
   saLedStat pauseStat;
 
   if( locIsPaused == 1 )                                             // Ferien
@@ -709,7 +938,6 @@ bool mainClass::processGearLed( int page, saLED led )
   {
      if( locGearDeploy[0] == 1.0 )                                   // Fahrwerk ist UNTEN/DOWN
      {
-       if( debug ) logLine( "<mainClass::processGearLed> Gear: DOWN" );
        gearStat = pPluginConfigClass->getGearColorForStat(SA_OK2);
        psaitekX52ProClass->setLed( page, led, gearStat.first, gearStat.second );
        oldGearDeploy[0] = 1.0;                                       // Wert übernehmen
@@ -717,7 +945,6 @@ bool mainClass::processGearLed( int page, saLED led )
      }
      if( locGearDeploy[0] == 0.0 )                                   // Fahrwerk ist Oben/UP
      {
-       if( debug ) logLine( "<mainClass::processGearLed> Gear: UP" );
        gearStat = pPluginConfigClass->getGearColorForStat(SA_OK1);
        psaitekX52ProClass->setLed( page, led, gearStat.first, gearStat.second );
        oldGearDeploy[0] = 0.0;                                       // Wert übernehmen
@@ -727,7 +954,6 @@ bool mainClass::processGearLed( int page, saLED led )
      {
        if( oldGearDeploy[0] != 0.5 )                                 // nur ein mal
        {
-         if( debug ) logLine( "<mainClass::processGearLed> Gear: TRANSFER" );
          gearStat = pPluginConfigClass->getGearColorForStat(SA_TRANS);
          psaitekX52ProClass->setLed( page, led, gearStat.first, gearStat.second );
          oldGearDeploy[0] = 0.5;                                    // Wert übernehmen
@@ -748,37 +974,6 @@ bool mainClass::processGearLed( int page, saLED led )
 //#############################################################################
 // entscheide ueber die Farbe der FLAPS-LED
 //#############################################################################
-bool mainClass::processLandingLightLed( int page, saLED led )
-{
-  int locLandingLightStat;
-  saLedStat lightStat;
-
-  locLandingLightStat = XPLMGetDatai( landingLightsOn );
-
-
-
-  if( oldLandingLightStat != locLandingLightStat )
-  {
-    oldLandingLightStat = locLandingLightStat;                       // So, kennzeichnen, daß ausgefuehrt
-    if( oldLandingLightStat )
-    {
-      if( debug ) logLine( "<mainClass::processLandingLightLed> landingLight: ON" );
-      lightStat = pPluginConfigClass->getLandingLightColorForStat(SA_OK1);
-    }
-    else
-    {
-      if( debug ) logLine( "<mainClass::processLandingLightLed> landingLight: OFF" );
-      lightStat = pPluginConfigClass->getLandingLightColorForStat(SA_OK2);
-    }
-    psaitekX52ProClass->setLed( page, led, lightStat.first, lightStat.second );
-    return( true );
-  }
-  return(true);
-}
-
-//#############################################################################
-// entscheide ueber die Farbe der FLAPS-LED
-//#############################################################################
 bool mainClass::processFlapsLed( int page, saLED led )
 {
   float locFlapsDeploy;                                              // Wie stehen die Dinge beim Fahrwerk
@@ -790,7 +985,6 @@ bool mainClass::processFlapsLed( int page, saLED led )
   {
      if( locFlapsDeploy == 0.0 )                                     // Klappen eingefahren
      {
-      if( debug ) logLine( "<mainClass::processFlapsLed> Flaps: UP" );
        flapStat = pPluginConfigClass->getFlapsColorForStat(SA_OK1);
        psaitekX52ProClass->setLed( page, led, flapStat.first, flapStat.second );
        oldFlapsDeploy = locFlapsDeploy;                              // Wert übernehmen
@@ -798,7 +992,6 @@ bool mainClass::processFlapsLed( int page, saLED led )
      }
      if( locFlapsDeploy == 1.0 )                                     // Klappen VOLL / FULL
      {
-      if( debug ) logLine( "<mainClass::processFlapsLed> Flaps: FULL" );
        flapStat = pPluginConfigClass->getFlapsColorForStat(SA_OK2);
        psaitekX52ProClass->setLed( page, led, flapStat.first, flapStat.second );
        oldFlapsDeploy = locFlapsDeploy;                              // Wert übernehmen
@@ -808,7 +1001,6 @@ bool mainClass::processFlapsLed( int page, saLED led )
      {
        if( oldFlapsDeploy != 0.5 )                                   // nur ein mal
        {
-         if( debug ) logLine( "<mainClass::processFlapsLed> Flaps: TRANS" );
          flapStat = pPluginConfigClass->getFlapsColorForStat(SA_TRANS);
          psaitekX52ProClass->setLed( page, led, flapStat.first, flapStat.second );
          oldFlapsDeploy = 0.5;                                       // Wert übernehmen

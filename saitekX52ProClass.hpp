@@ -14,7 +14,8 @@
 #include <sstream>
 #include <string>
 
-#define STUECK_MAXPAGES 3                                            // Anzahl der Seiten, die ich zulasse
+//#define STUECK_MAXPAGES 3                                            // Anzahl der Seiten, die ich zulasse
+#define STUECK_MAXPAGES 6
 typedef void ( __stdcall dmSoftButtonCallback)(IN DWORD btnd, IN void* pCtxt); // Typendefinition für meinen Callback
 typedef void ( __stdcall dmPageChangeCallback)(IN DWORD page, IN bool active, IN void* pCtxt); // Typendefinition für neuen Callback
 

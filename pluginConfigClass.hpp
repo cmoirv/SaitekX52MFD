@@ -22,15 +22,11 @@ public:
   inline bool isDebug(void) { return( debug ); };                    // Debugging?
   inline void setDebug( bool _db ) { debug = _db; };                 // schalten!
   inline saLED getlandingGearLed( void ) { return( landingGear ); }; // welche LED war es noch?
-  inline saLED getLandingLightLed( void ) { return( landingLight ); }; // welche LED?
   inline saLED getflapsGearLed( void ) { return( flapsStatus ); };   // welche LED war es noch?
   inline saLED getIsRunningLED( void ) { return( simIsRunning ); };  // Welche LED solls sein?
   inline saLedStat getFlapsColorForStat( saSigStat _st ) { return( flapsLedStats[_st] ); };
   inline saLedStat getGearColorForStat( saSigStat _st ) { return( landingGearLedStats[_st] ); };
-  inline saLedStat getLandingLightColorForStat( saSigStat _st ) { return ( landingLightLedStats[_st] ); };
   inline saLedStat getIsRunningColorForStat( saSigStat _st ) { return( simIsRunningLedStats[_st] ); };
-  inline bool setPluginEnabled( bool _pe ) { pluginEnabled=_pe; return( pluginEnabled ); };  // Setze den Status
-  inline bool getPluginEnabled( void ) {return( pluginEnabled ); };  // Ist es erlaubt?
 private:
   bool computeLine( std::string&, std::string&, std::string& );      // bearbeite Input
   bool computeValuePair( std::string&, std::string& );               // setze Paare in config um
@@ -49,12 +45,9 @@ private:
   logThreadClass* ltClass;                                           // Zeiger auf LogThreadClass
   int blinkInterval;                                                 // Blinkintervall in ms
   bool debug;                                                        // Debug AN oder AUS
-  bool pluginEnabled;                                                // Ist das Plugin "enabled"
   std::string configFileName;                                        // wie wollen wir denn heissen?
   saLED landingGear;                                                 // welche LED macht Fahrwerk?
   saLedStat landingGearLedStats[SA_FAILED+1];                        // Zustaende fuer Fahrwerk trans/up/down/fail
-  saLED landingLight;                                                // welche LED macht das?
-  saLedStat landingLightLedStats[SA_FAILED+1];                       // Zustaende fuer Landing Light on/off
   saLED flapsStatus;                                                 // welche LED fuer Klappen (green=None, red=full, amber=between full and none)
   saLedStat flapsLedStats[SA_FAILED+1];                              // Zustaende fuer Fahrwerk trans/up/down/fail
   saLED simIsRunning;                                                // welche LED macht Pausenanzeige?

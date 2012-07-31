@@ -1,5 +1,5 @@
-//#############################################################################
-// Implementation der Klasse für den Stick
+ï»¿//#############################################################################
+// Implementation der Klasse fÃ¼r den Stick
 //#############################################################################
 #include "saitekX52ProClass.hpp"
 
@@ -37,15 +37,15 @@ saitekX52ProClass::saitekX52ProClass( logThreadClass *ptr) :
 saitekX52ProClass::~saitekX52ProClass(void)
 {
   if( debug ) logLine( "<saitekX52ProClass::~saitekX52ProClass> " );
-  softButtonCb = 0;                                                  // Callback löschen
-  pageChangeCb = 0;                                                  // callback löschen
+  softButtonCb = 0;                                                  // Callback lÃ¶schen
+  pageChangeCb = 0;                                                  // callback lÃ¶schen
   stickFuncDeinit();                                                 // DirectOutpu deinitialisieren
   CDirectOutput::~CDirectOutput();                                   // und das Objekt loeschen
   if( debug ) logLine( "<saitekX52ProClass::~saitekX52ProClass> Class destroyed" );
 }
 
 //#############################################################################
-// Setze ein Logobjekt noch nachträglich
+// Setze ein Logobjekt noch nachtrÃ¤glich
 //#############################################################################
 void saitekX52ProClass::setLogObject( logThreadClass *ptr )
 {
@@ -91,7 +91,7 @@ bool saitekX52ProClass::stickFuncInit( IN const wstring& appName )
 	}
   if( debug ) logLine( "<saitekX52ProClass::stickFuncInit> DirectOutput Init...OK" );
 
-  // Ok, erste Hürde genommen, jetzt Registriere Callback fuer Geraetewechsel
+  // Ok, erste HÃ¼rde genommen, jetzt Registriere Callback fuer Geraetewechsel
   if( debug ) logLine( "<saitekX52ProClass::stickFuncInit> Register Device Change Callback... " );
 	if( hr = RegisterDeviceChangeCallback( lDeviceChange, (void *)this ) )
 	{
@@ -105,7 +105,7 @@ bool saitekX52ProClass::stickFuncInit( IN const wstring& appName )
   if( debug ) logLine( "<saitekX52ProClass::stickFuncInit> Register Device Change Callback... OK" );
 
   // Weiter: Auflistung der Geraete...
-	// benötigt installierten Callback "RegisterDeviceChangeCallback( &stueckClass::deviceChange, 0)"
+	// benÃ¶tigt installierten Callback "RegisterDeviceChangeCallback( &stueckClass::deviceChange, 0)"
   if( debug ) logLine( "<saitekX52ProClass::stickFuncInit> enumerate Devices... " );
 	if( hr = Enumerate())
 	{
@@ -161,12 +161,16 @@ bool saitekX52ProClass::stickFuncInit( IN const wstring& appName )
     addPage( 0, wstring(L"speeds"), true );
     addPage( 1, wstring(L"com1nav1"), false );
     addPage( 2, wstring(L"com2nav2"), false );
+	addPage( 3, wstring(L"dme"), false );// Added by Cmoirv
+	addPage( 4, wstring(L"QNH"), false );// Added by Cmoirv
+	addPage( 5, wstring(L"Transponder"), false );// Added by Cmoirv
     setString( 0, 0, wstring( L"  X-Plane MFD   " ) );
     setString( 0, 1, wstring( L" Saitek X52 Pro " ) );
     setString( 0, 2, wstring( L"  D. Marciniak  " ) );
-    setString( 1, 0, wstring( _MFDVERSION_ ) );
-    setString( 1, 1, wstring( L"     09/2010    " ) );
-    setString( 2, 1, wstring( L"      -----     " ) );
+		
+    setString( 1, 0, wstring( L"  Version 2.0  " ) );
+    setString( 1, 1, wstring( L"     06/2012   " ) );
+    setString( 2, 1, wstring( L"    H.LEMOINE  " ) );
     if( debug ) logLine( "<saitekX52ProClass::stickFuncInit> Add pages for MFD... ");
   }
   catch( mfdException& _ex )
@@ -242,7 +246,7 @@ int saitekX52ProClass::delPage( int index )
 }
 
 //#############################################################################
-// entfernt alle Seiten, ohne Rücksicht auf Ergebniswerte
+// entfernt alle Seiten, ohne RÃ¼cksicht auf Ergebniswerte
 //#############################################################################
 bool saitekX52ProClass::delAllPages()
 {
@@ -285,59 +289,72 @@ bool saitekX52ProClass::setString( int page, int index, std::wstring& line )
   }
   return(true);
 }
-
+	
 //#############################################################################
-// Gib die ID der einsprechenden LED zurück
+// Gib die ID der einsprechenden LED zurÃ¼ck
 //#############################################################################
 void saitekX52ProClass::getLedId( saLED led, int& idRed, int& idGreen )
 {
+  //if( debug ) logLine( "<saitekX52ProClass::getLedId>..." );
   switch( led )
   {
   case FIRE_A:
+    if( debug ) logLine( "<saitekX52ProClass::getLedId> FIRE_A" );
     idRed   = 1;
     idGreen = 2;
     break;
   case FIRE_B:
+    if( debug ) logLine( "<saitekX52ProClass::getLedId> FIRE_B" );
     idRed   = 3;
     idGreen = 4;
     break;
   case FIRE_D:
+    if( debug ) logLine( "<saitekX52ProClass::getLedId> FIRE_D" );
     idRed   = 5;
     idGreen = 6;
     break;
   case FIRE_E:
+    if( debug ) logLine( "<saitekX52ProClass::getLedId> FIRE_E" );
     idRed   = 7;
     idGreen = 8;
     break;
   case T1:
+    if( debug ) logLine( "<saitekX52ProClass::getLedId> T1" );
     idRed   = 9;
     idGreen = 10;
     break;
   case T2:
+    if( debug ) logLine( "<saitekX52ProClass::getLedId> T2" );
     idRed   = 11;
     idGreen = 12;
     break;
   case T3:
+    if( debug ) logLine( "<saitekX52ProClass::getLedId> T3" );
     idRed   = 13;
     idGreen = 14;
     break;
   case POV2:
+    if( debug ) logLine( "<saitekX52ProClass::getLedId> POV2" );
     idRed   = 15;
     idGreen = 16;
     break;
   case CLUTCH:
+    if( debug ) logLine( "<saitekX52ProClass::getLedId> CLUTCH" );
     idRed   = 17;
     idGreen = 18;
     break;
   case FIRE_BUTTON:
+    if( debug ) logLine( "<saitekX52ProClass::getLedId> FIRE_BUTTON" );
     idRed   = 0;
     idGreen = 0;
     break;
   case THROTTLE_AXIS:
+    if( debug ) logLine( "<saitekX52ProClass::getLedId> THROTTLE_AIS" );
     idRed   = 19;
     idGreen = 19;
     break;
   }
+  //if( debug ) logLine( "<saitekX52ProClass::getLedId>...OK" );
 }
 
 //#############################################################################
@@ -361,7 +378,7 @@ void saitekX52ProClass::setLedStat( saLED led, saLedStat& stat )
 //#############################################################################
 void saitekX52ProClass::getVColors( saColor _color, int& _vRed, int& _vGreen )
 {
-  switch( _color )                                         // ID's für die Farbe suchen
+  switch( _color )                                         // ID's fÃ¼r die Farbe suchen
   {
     case SA_OFF:
     _vRed   = 0;
@@ -405,14 +422,14 @@ bool saitekX52ProClass::makeAllLedBlink( bool alwaysSet )
     // wenn es blinken soll UND nicht aus ist ODER wenn es IMMER soll!
     if( ((ledStat[ led ].second == SA_BLINK) && (ledStat[ led ].first != SA_OFF)) || alwaysSet )   
     {
-      if( !onPhase )                                                           // während der Dark-Phase
+      if( !onPhase )                                                           // wÃ¤hrend der Dark-Phase
       {
         vRed   = 0;
         vGreen = 0;
       }
     }
     SetLed( gDevice, page, idRed,   vRed );                                    // Rot setzen
-    SetLed( gDevice, page, idGreen, vGreen );                                  // Grün setzen
+    SetLed( gDevice, page, idGreen, vGreen );                                  // GrÃ¼n setzen
     if( ledStat[ led ].second == SA_BLINK ) wasBlinking = true;                // ok, war ein Blinker!
   }
   if( wasBlinking ) onPhase = !onPhase;                                        // Phasenwechsel
@@ -435,13 +452,14 @@ bool saitekX52ProClass::makeAllLedBlink( bool alwaysSet )
 
 //#############################################################################
 // LED setzen...
+// 	HRESULT SetLed( IN void* hDevice, IN DWORD dwPage, IN DWORD dwIndex, IN DWORD dwValue)
 //#############################################################################
 int saitekX52ProClass::setLed(int page, saLED led, saColor value, saBlink bl )
 {
   int idGreen,idRed;
   string msg;
   
-  if( debug ) logLine( "<saitekX52ProClass::setLed>..." );
+  //if( debug ) logLine( "<saitekX52ProClass::setLed>..." );
   if( bl == SA_BLINK ) msg = "BLINK"; else msg = "NOBLINK";
   if( led < FIRE_BUTTON )
   {
@@ -474,7 +492,7 @@ int saitekX52ProClass::setLed(int page, saLED led, saColor value, saBlink bl )
     }
     ledStat[led].first = value;
     ledStat[led].second = bl;
-    if( debug ) logLine( "<saitekX52ProClass::setLed>...OK" );
+    //if( debug ) logLine( "<saitekX52ProClass::setLed>...OK" );
     return( value );
   }
   if( led == FIRE_BUTTON )
@@ -491,7 +509,7 @@ int saitekX52ProClass::setLed(int page, saLED led, saColor value, saBlink bl )
     }
     ledStat[led].first = value;
     ledStat[led].second = bl;
-    if( debug ) logLine( "<saitekX52ProClass::setLed>...OK" );
+    //if( debug ) logLine( "<saitekX52ProClass::setLed>...OK" );
     return(value);
   }
   if( led == THROTTLE_AXIS )
@@ -508,7 +526,7 @@ int saitekX52ProClass::setLed(int page, saLED led, saColor value, saBlink bl )
     }
     ledStat[led].first = value;
     ledStat[led].second = bl;
-    if( debug ) logLine( "<saitekX52ProClass::setLed>...OK" );
+    //if( debug ) logLine( "<saitekX52ProClass::setLed>...OK" );
     return( value );
   }
   throw mfdException( "<saitekX52ProClass::setLed> Unknown Value for LED!" );
@@ -556,7 +574,7 @@ bool saitekX52ProClass::errorLine( std::string& line )
 }
 
 //#############################################################################
-// Gerät geändert Callback
+// GerÃ¤t geÃ¤ndert Callback
 //#############################################################################
 void saitekX52ProClass::deviceChange( void* device, bool added )
 {
@@ -575,7 +593,7 @@ void saitekX52ProClass::deviceChange( void* device, bool added )
 }
 
 //#############################################################################
-// Callback für Page Change
+// Callback fÃ¼r Page Change
 //#############################################################################
 void saitekX52ProClass::pageChange( void* device, DWORD page, bool active )
 {
@@ -592,7 +610,7 @@ void saitekX52ProClass::pageChange( void* device, DWORD page, bool active )
 }
 
 //#############################################################################
-// Callback für Soft Button
+// Callback fÃ¼r Soft Button
 //#############################################################################
 void saitekX52ProClass::softButton( void* device, DWORD btns )
 {
@@ -600,7 +618,7 @@ void saitekX52ProClass::softButton( void* device, DWORD btns )
   string outPut;
 
   // So, jetz wird es kompliziert...
-  // Wenn ich einen Callback für den Callback eingerichtet habe, 
+  // Wenn ich einen Callback fÃ¼r den Callback eingerichtet habe, 
   // dann benutze ish einfach mal diesen, ansonste schreib einfach
   // bei debug stupide in die Logdatei
   if( softButtonCb )
@@ -652,7 +670,7 @@ void saitekX52ProClass::softButton( void* device, DWORD btns )
 }
 
 //#############################################################################
-// Gib aktive Page zurück
+// Gib aktive Page zurÃ¼ck
 //#############################################################################
 int saitekX52ProClass::getActivePage(void)
 {
@@ -660,7 +678,7 @@ int saitekX52ProClass::getActivePage(void)
 }
 
 //#############################################################################
-// Gib aktive Page zurück und setze neue Seite
+// Gib aktive Page zurÃ¼ck und setze neue Seite
 //#############################################################################
 int saitekX52ProClass::setActivePage( int page )
 {
@@ -670,7 +688,7 @@ int saitekX52ProClass::setActivePage( int page )
 }
 
 //#############################################################################
-// Registriere eigene Callback-Funktion dafür
+// Registriere eigene Callback-Funktion dafÃ¼r
 //#############################################################################
 bool saitekX52ProClass::registerSoftButtonCalback( dmSoftButtonCallback *func, void *ctxt )
 {
@@ -680,7 +698,7 @@ bool saitekX52ProClass::registerSoftButtonCalback( dmSoftButtonCallback *func, v
 }
 
 //#############################################################################
-// Registriere eigene Callback-Funktion dafür
+// Registriere eigene Callback-Funktion dafÃ¼r
 //#############################################################################
 bool saitekX52ProClass::registerPageChangeCallback( dmPageChangeCallback *func, void *ctxt)
 {
