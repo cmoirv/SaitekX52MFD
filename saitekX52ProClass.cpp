@@ -163,8 +163,10 @@ bool saitekX52ProClass::stickFuncInit( IN const wstring& appName )
     addPage( ID_PAGE_COM2NAV2, wstring(L"com2nav2"), false );
 	addPage( ID_PAGE_NAV1, wstring(L"NAV 1"), false );// Added by Cmoirv
 	addPage( ID_PAGE_NAV2, wstring(L"NAV 2"), false );// Added by Cmoirv
+	addPage( ID_PAGE_AUTOPILOT, wstring(L"AUTOPILOT"), false );// Added by Cmoirv
 	addPage( ID_PAGE_QNH, wstring(L"QNH"), false );// Added by Cmoirv
 	addPage( ID_PAGE_TRANSPONDER, wstring(L"Transponder"), false );// Added by Cmoirv
+	
     setString( 0, 0, wstring( L"  X-Plane MFD   " ) );
     setString( 0, 1, wstring( L" Saitek X52 Pro " ) );
     setString( 0, 2, wstring( L"  D. Marciniak  " ) );

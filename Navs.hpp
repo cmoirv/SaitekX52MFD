@@ -1,18 +1,9 @@
-#include <iostream>
-#include <string>
-#include <XPLMDataAccess.h>
-#include <XPLMProcessing.h>
-#include <XPLMUtilities.h>
-#include "mainClass.hpp"
 #include "DataManagement.hpp"
 #include "TimeManagement.hpp"
 #include <math.h>
 
 #ifndef DEF_NAVS
 #define DEF_NAVS
-
-#define QUOTE(name) #name
-#define STR(macro) QUOTE(macro)
 
 //definition of dataref
 #define OBS_NAV1_NAME sim/cockpit/radios/nav1_obs_degm
@@ -40,8 +31,10 @@ enum saNAV {NAV1, NAV2}; // allow to choose which nav we want
 class Navs {
 
 private:
-public:
-	Navs();
+	// DataRef used by the NAV page
+	XPLMDataRef _obs_nav;
+	XPLMDataRef _dme;
+	XPLMDataRef _navFreq;
 
 	// id of nav (nav 1 or 2)
 	saNAV _idNav;
@@ -52,11 +45,10 @@ public:
 	TimeManagement *_pTimeManagement;
 
 public:
-	XPLMDataRef _obs_nav;
-	XPLMDataRef _dme;
-	XPLMDataRef _navFreq;
-
+	
+	//Navs();
 	Navs(saNAV);
+	
 	void doMFDDisplay( saitekX52ProClass *psaitekX52ProClass ); 
 	void countValue(int dir);
 };

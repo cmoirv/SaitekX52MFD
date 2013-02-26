@@ -164,6 +164,7 @@ if exist "P:\saitekMFD.log" del /Q "P:\saitekMFD.log"
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AutoPilot.cpp" />
     <ClCompile Include="dllMain.cpp" />
     <ClCompile Include="logThreadClass.cpp" />
     <ClCompile Include="mainClass.cpp" />
@@ -175,6 +176,7 @@ if exist "P:\saitekMFD.log" del /Q "P:\saitekMFD.log"
     <ClCompile Include="Transponder.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AutoPilot.hpp" />
     <ClInclude Include="DataManagement.hpp" />
     <ClInclude Include="dllMain.hpp" />
     <ClInclude Include="logThreadClass.hpp" />

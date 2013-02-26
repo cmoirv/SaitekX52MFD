@@ -46,6 +46,9 @@
     <ClCompile Include="TimeManagement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AutoPilot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dllMain.hpp">
@@ -82,6 +85,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TimeManagement.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AutoPilot.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,12 +2,12 @@
 
 wchar_t *displayFormatDiffNav[1] =
 {
- L" NAV%d : %03d.%02d\0"
+	L" NAV%d : %03d.%02d\0"
 };
 
 // Constructor to set dataRef
 Navs::Navs(saNAV nav){
-	
+
 	_idNav = nav;
 	_obs_deg_amount = 20;
 
@@ -18,7 +18,7 @@ Navs::Navs(saNAV nav){
 		_obs_nav = XPLMFindDataRef(OBS_NAV1);
 		_dme = XPLMFindDataRef(DME_NAV1);
 		_navFreq = XPLMFindDataRef(NAV1_FRQ);
-		
+
 	}
 	else{
 		_obs_nav = XPLMFindDataRef(OBS_NAV2);
@@ -46,22 +46,22 @@ void Navs::countValue(int dir){
 		_obs_deg_amount = 1;
 	}
 
-	 if( dir == saCOUNT_UP )
-	 {
-		 XPLMSetDataf(_obs_nav, XPLMGetDataf(_obs_nav) + _obs_deg_amount);
-		 if(XPLMGetDataf(_obs_nav) >= 361)
-		 {
+	if( dir == saCOUNT_UP )
+	{
+		XPLMSetDataf(_obs_nav, XPLMGetDataf(_obs_nav) + _obs_deg_amount);
+		if(XPLMGetDataf(_obs_nav) >= 361)
+		{
 			XPLMSetDataf(_obs_nav, XPLMGetDataf(_obs_nav) - 360.0f);
-		 }
-	 }
+		}
+	}
 	else
 	{
 		XPLMSetDataf(_obs_nav, XPLMGetDataf(_obs_nav) - _obs_deg_amount);
-		 if(XPLMGetDataf(_obs_nav) <= 1)
-		 { 
-			 XPLMSetDataf(_obs_nav, XPLMGetDataf(_obs_nav) + 360.0f);
-		 }
-	 }
+		if(XPLMGetDataf(_obs_nav) <= 1)
+		{ 
+			XPLMSetDataf(_obs_nav, XPLMGetDataf(_obs_nav) + 360.0f);
+		}
+	}
 }
 
 // Manage display data

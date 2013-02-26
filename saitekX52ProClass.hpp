@@ -15,7 +15,7 @@
 #include <string>
 
 //#define STUECK_MAXPAGES 3                                            // Anzahl der Seiten, die ich zulasse
-#define STUECK_MAXPAGES 7
+#define STUECK_MAXPAGES 8
 
 // ids of different pages, it will be easy to change the order
 #define ID_PAGE_SPEEDS		0
@@ -23,8 +23,9 @@
 #define ID_PAGE_COM2NAV2	2
 #define ID_PAGE_NAV1		3
 #define ID_PAGE_NAV2		4
-#define ID_PAGE_QNH			5
-#define ID_PAGE_TRANSPONDER	6
+#define ID_PAGE_QNH			6
+#define ID_PAGE_TRANSPONDER	7
+#define ID_PAGE_AUTOPILOT	5
 
 
 
