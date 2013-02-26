@@ -158,12 +158,13 @@ bool saitekX52ProClass::stickFuncInit( IN const wstring& appName )
   try
   {
 	if( debug ) logLine( "<saitekX52ProClass::stickFuncInit> Add pages for MFD..." );
-    addPage( 0, wstring(L"speeds"), true );
-    addPage( 1, wstring(L"com1nav1"), false );
-    addPage( 2, wstring(L"com2nav2"), false );
-	addPage( 3, wstring(L"dme"), false );// Added by Cmoirv
-	addPage( 4, wstring(L"QNH"), false );// Added by Cmoirv
-	addPage( 5, wstring(L"Transponder"), false );// Added by Cmoirv
+    addPage( ID_PAGE_SPEEDS, wstring(L"speeds"), true );
+    addPage( ID_PAGE_COM1NAV1, wstring(L"com1nav1"), false );
+    addPage( ID_PAGE_COM2NAV2, wstring(L"com2nav2"), false );
+	addPage( ID_PAGE_NAV1, wstring(L"NAV 1"), false );// Added by Cmoirv
+	addPage( ID_PAGE_NAV2, wstring(L"NAV 2"), false );// Added by Cmoirv
+	addPage( ID_PAGE_QNH, wstring(L"QNH"), false );// Added by Cmoirv
+	addPage( ID_PAGE_TRANSPONDER, wstring(L"Transponder"), false );// Added by Cmoirv
     setString( 0, 0, wstring( L"  X-Plane MFD   " ) );
     setString( 0, 1, wstring( L" Saitek X52 Pro " ) );
     setString( 0, 2, wstring( L"  D. Marciniak  " ) );

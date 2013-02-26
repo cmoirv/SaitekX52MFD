@@ -13,14 +13,16 @@
 #include "Transponder.hpp"
 #include <string>
 #include <strstream>
+#include "Navs.hpp"
 
 //#############################################################################
 // Definitionen für diese Klasse
 //#############################################################################
 enum saDIRECTION { saCOUNT_UP, saCOUNT_DOWN };                       // Richtung, in der der Wert verändert werden soll
-enum saSELECT { saSEL_NONE, saSEL_TOPLEFT, saSEL_BOTTOMLEFT_LEFT, 
+typedef enum saSELECT { saSEL_NONE, saSEL_TOPLEFT, saSEL_BOTTOMLEFT_LEFT, 
                 saSEL_BOTTOMLEFT_RIGHT, saSEL_TOPRIGHT, 
-                saSEL_BOTTOMRIGHT_LEFT, saSEL_BOTTOMRIGHT_RIGHT, saSEL_TPR_THDS, saSEL_TPR_HDS, saSEL_TPR_TENS, saSEL_TPR_UNTS, saSEL_TPR_MODE  };   // Bezeichnung für Selektion auf dem MFD
+                saSEL_BOTTOMRIGHT_LEFT, saSEL_BOTTOMRIGHT_RIGHT, 
+				saSEL_TPR_THDS, saSEL_TPR_HDS, saSEL_TPR_TENS, saSEL_TPR_UNTS, saSEL_TPR_MODE} esaSELECT;   // Bezeichnung für Selektion auf dem MFD
 enum saUPDOWNMODE { saUD_SELECT, saUD_VALUE };                       // Markierung oder Selektion (bei Selektion Wert verändern)
 enum saCLICKMODE  { saCLICK_CHANGE, saCLICK_VALUE };                 // Wert tauschen oder verändern
 
@@ -60,7 +62,11 @@ private:
   logThreadClass *plogThreadClass;                                   // Zeiger für die Logging Thread-Klasse
   pluginConfigClass *pPluginConfigClass;                             // Zeiger für die Configurationsklase
   saitekX52ProClass *psaitekX52ProClass;                             // Klasse für Funktionen des Sticks  static float oldGearDeploy[MAXPAGES];                              // Welcher Fahrwerkstatus wars denn?
-  Transponder transponder;
+  Transponder *transponder;
+  
+  // Object for Nav 1 and Nav 2
+  Navs		*nav1;
+  Navs		*nav2;
   XPLMDataRef groundSpeedRef;                                        // Referenz en vom Simulator
   XPLMDataRef indicatedAirSpeedRef;
   XPLMDataRef verticalSpeedRef;
@@ -81,8 +87,6 @@ private:
   XPLMDataRef landingLightsOn;                                       // Ist das Landelicht AN?
   XPLMDataRef simIsPaused;                                           // Pause oder nicht? int
   // Add HLM
-  XPLMDataRef dme_dist_nav1;                                       // Ist das Landelicht AN?
-  XPLMDataRef dme_dist_nav2;
   XPLMDataRef barometer_setting;
   // End add HLM
   //XPLMCommandRef mfdCycleUpCmdRef;

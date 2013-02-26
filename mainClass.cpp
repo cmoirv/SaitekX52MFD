@@ -73,12 +73,17 @@ mainClass::mainClass( string& logFileName, string& configFileName ) :
   indicatedAirSpeedRef(0), verticalSpeedRef(0),elevationRev(0),
   com1Ref(0),com2Ref(0),com1StbyRef(0),com2StbyRef(0),
   nav1Ref(0),nav2Ref(0),nav1StbyRef(0),nav2StbyRef(0),
-  currCursorSelect(saSEL_NONE),upDownMode(saUD_SELECT),clickMode(saCLICK_CHANGE),transponder()
+  currCursorSelect(saSEL_NONE),upDownMode(saUD_SELECT),clickMode(saCLICK_CHANGE),transponder(0),nav1(0),nav2(0)
 {
   try
   {
     plogThreadClass = new logThreadClass( logFileName );             // Erzeuge den zentrale LOG Thread
     pPluginConfigClass = new pluginConfigClass( configFileName );    // Die Konfigurationsklasse erzeugen
+	transponder= new Transponder();
+	// instanciation of the 2 navs object
+	nav1 = new Navs(NAV1);
+	nav2 = new Navs(NAV2);
+
     pPluginConfigClass->setLogThreadClass( plogThreadClass );        // Klasse fuer Loggen bereitmachen
     pPluginConfigClass->readConfig();                                // Jetzt lese die Configuration!
     debug = pPluginConfigClass->isDebug();                           // Debugstatus eintragen
@@ -163,8 +168,6 @@ bool mainClass::initProgrammData( void )
     flapsDeploy            = XPLMFindDataRef("sim/cockpit2/controls/flap_handle_deploy_ratio"); // float Gesamt-Status Klappen
     simIsPaused            = XPLMFindDataRef("sim/time/paused");                           // int Sim ist in den ferien
 	// Added by Cmoirv
-	dme_dist_nav1          = XPLMFindDataRef("sim/cockpit/radios/nav1_dme_dist_m");
-	dme_dist_nav2          = XPLMFindDataRef("sim/cockpit/radios/nav2_dme_dist_m");
 	barometer_setting      = XPLMFindDataRef("sim/cockpit/misc/barometer_setting");
 	//End added by Cmoirv
     for( i=0; i< MAXPAGES; i++ )
@@ -205,6 +208,7 @@ float mainClass::doMFDDisplay( void )
   {
     oldActivePage = activePage;                                      // Bei Seitenwechsel soll nix selektiert sein...
     currCursorSelect = saSEL_NONE;
+	upDownMode = saUD_SELECT;//add cmoirv 
   }
   if ( ! psaitekX52ProClass ) return( 1.0 );                         // Kein Objekt, keine Aktion
   if( activePage > 0 )                                               // Auf Seite 0 brauch ich das alles nicht!
@@ -214,7 +218,7 @@ float mainClass::doMFDDisplay( void )
     case saSEL_NONE:                                                 // nichts selektiert
       displayFormatIndex1 = 0;
       displayFormatIndex2 = 0;
-	  if(transponder.getMode() == TRANSPONDER_OFF)						// manage transponder mode
+	  if(transponder->getMode() == TRANSPONDER_OFF)						// manage transponder mode
 		{
 			displayTransponder = 9;
 		}
@@ -265,7 +269,7 @@ float mainClass::doMFDDisplay( void )
 	  displayTransponderMode = 0;
       break;
     case saSEL_TPR_MODE:											// transponder selection : mode
-		if(transponder.getMode() == TRANSPONDER_OFF)
+		if(transponder->getMode() == TRANSPONDER_OFF)
 		{
 			displayTransponder = 9;
 		}
@@ -295,7 +299,7 @@ float mainClass::doMFDDisplay( void )
  // Welche Seite ist aktiv?
   switch( activePage )
   {
-  case 0:                                                            // Location - Seite (wie schnell bin ich, wie hoch)
+  case ID_PAGE_SPEEDS:                                                            // Location - Seite (wie schnell bin ich, wie hoch)
     swprintf( (wchar_t *)&wbuffer[0], 16, L"HSPD:  %4d KIA\0", int( XPLMGetDataf( indicatedAirSpeedRef )));
     psaitekX52ProClass->setString( activePage, 0, wstring( (wchar_t *)&wbuffer[0] ) );
     swprintf( (wchar_t *)&wbuffer[0], 16, L"VVI :  %4d fts\0", int( XPLMGetDataf( verticalSpeedRef )));
@@ -304,7 +308,7 @@ float mainClass::doMFDDisplay( void )
     psaitekX52ProClass->setString( activePage, 2, wstring( (wchar_t *)&wbuffer[0] ) );
     return( float(0.5) );                                            // in einer halbenSekunde wieder zurück!
     break;
-  case 1:                                                            // Seite 1, COM 1 und NAV 1
+  case ID_PAGE_COM1NAV1:                                                            // Seite 1, COM 1 und NAV 1
     psaitekX52ProClass->setString( activePage, 0, wstring( L"  COM1    NAV1  " ) );
     swprintf( (wchar_t *)&wbuffer[0], 17, displayFormat[displayFormatIndex1], 
                           (XPLMGetDatai( com1Ref ) / 100),
@@ -320,7 +324,7 @@ float mainClass::doMFDDisplay( void )
     psaitekX52ProClass->setString( activePage, 2, wstring( (wchar_t *)&wbuffer[0] ) );
     return( float(1.5) );                                            // erst in eineinhalb Sekunden zurück
     break;
-  case 2:                                                            // Seite 2, COM 2 und NAV 2
+  case ID_PAGE_COM2NAV2:                                                            // Seite 2, COM 2 und NAV 2
     psaitekX52ProClass->setString( activePage, 0, wstring( L"  COM2    NAV2  " ) );
     swprintf( (wchar_t *)&wbuffer[0], 17, displayFormat[displayFormatIndex1], 
                           (XPLMGetDatai( com2Ref ) / 100),
@@ -336,16 +340,8 @@ float mainClass::doMFDDisplay( void )
     psaitekX52ProClass->setString( activePage, 2, wstring( (wchar_t *)&wbuffer[0] ) );
     return( float(1.5) );                                            // in eineinhalb Sekunden zurück
     break;
-  case 3:            // Added DME distances by Cmoirv                                             
-    psaitekX52ProClass->setString( activePage, 0, wstring( L" DME DISTANCES  " ) );
-	swprintf( (wchar_t *)&wbuffer[0], 16, L" NAV1 %03.1f NM \0", XPLMGetDataf( dme_dist_nav1 ));
-	psaitekX52ProClass->setString( activePage, 1, wstring( (wchar_t *)&wbuffer[0] ) );
-	swprintf( (wchar_t *)&wbuffer[0], 16, L" NAV2 %03.1f NM \0", XPLMGetDataf( dme_dist_nav2 ));
-	psaitekX52ProClass->setString( activePage, 2, wstring( (wchar_t *)&wbuffer[0] ) );
 
-    return( float(0.5) );                                            
-    break;
-  case 4:            // Added selection of QNH by Cmoirv                                           
+  case ID_PAGE_QNH:            // Added selection of QNH by Cmoirv                                           
     psaitekX52ProClass->setString( activePage, 0, wstring( L" Baro Setting  \0" ) );
 	swprintf( (wchar_t *)&wbuffer[0], 16, L" %02.2f mmHg \0", XPLMGetDataf(barometer_setting) );
 	psaitekX52ProClass->setString( activePage, 1, wstring( (wchar_t *)&wbuffer[0] ) );
@@ -354,17 +350,28 @@ float mainClass::doMFDDisplay( void )
 	
     return( float(0.5) );                                            
     break;// 
-  case 5:           // Added selection of squawk code and transponder mode by Cmoirv   
+  case ID_PAGE_TRANSPONDER:           // Added selection of squawk code and transponder mode by Cmoirv   
     psaitekX52ProClass->setString( activePage, 0, wstring( L" Transponder  \0" ) );
 	swprintf( (wchar_t *)&wbuffer[0], 16, displayFormatTransponder[displayTransponder], 
-										transponder.getThousands(), 
-										transponder.getHundreds(), 
-										transponder.getTens(), 
-										transponder.getUnits());
+										transponder->getThousands(), 
+										transponder->getHundreds(), 
+										transponder->getTens(), 
+										transponder->getUnits());
 	psaitekX52ProClass->setString( activePage, 1, wstring( (wchar_t *)&wbuffer[0] ) );
 	swprintf( (wchar_t *)&wbuffer[0], 16, displayFormatTransponderMode[displayTransponderMode], 
-										transponder.getModeString());
+										transponder->getModeString());
 	psaitekX52ProClass->setString( activePage, 2, wstring( (wchar_t *)&wbuffer[0] ) );
+	
+    return( float(0.5) );                                           
+    break;
+  case ID_PAGE_NAV1:           // Added obs selection for nav 1 by Cmoirv   
+	  nav1->doMFDDisplay(psaitekX52ProClass);
+	
+    return( float(0.5) );                                           
+    break;
+	
+  case ID_PAGE_NAV2:           // Added obs selection for nav 2 by Cmoirv   
+    nav2->doMFDDisplay(psaitekX52ProClass);
 	
     return( float(0.5) );                                           
     break;
@@ -446,7 +453,7 @@ void mainClass::countValue( saDIRECTION dir )
   {
     if( debug ) logLine( "<mainClass::countValue> Value bottom left-left value..." );
     diff *= 100;                                                     // Kiloherz stellen
-    if( 1 == psaitekX52ProClass->getActivePage() )                   // COM1 Standby
+    if( ID_PAGE_COM1NAV1 == psaitekX52ProClass->getActivePage() )                   // COM1 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...COM1 standby, kHz!" );
       XPLMSetDatai( com1StbyRef, XPLMGetDatai(com1StbyRef) + diff  );// Stellen
@@ -456,7 +463,7 @@ void mainClass::countValue( saDIRECTION dir )
 	  else if(XPLMGetDatai(com1StbyRef) < 11800) // reach the lower limit
 		  XPLMSetDatai( com1StbyRef, XPLMGetDatai(com1StbyRef) + 1900);
     }
-    else if( 2 == psaitekX52ProClass->getActivePage() )              // COM2 Standby
+    else if( ID_PAGE_COM2NAV2 == psaitekX52ProClass->getActivePage() )              // COM2 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...COM2 standby, kHz!" );
       XPLMSetDatai( com2StbyRef, XPLMGetDatai(com2StbyRef) + diff  );// Stellen
@@ -471,7 +478,7 @@ void mainClass::countValue( saDIRECTION dir )
   else if( currCursorSelect == saSEL_BOTTOMLEFT_RIGHT )              // entweder COM1 oder COM2 Standby Herz
   {
     if( debug ) logLine( "<mainClass::countValue> Value bottom left-right value..." );
-    if( 1 == psaitekX52ProClass->getActivePage() )                   // COM1 Standby
+    if( ID_PAGE_COM1NAV1 == psaitekX52ProClass->getActivePage() )                   // COM1 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...COM1 standby, Hz!" );
 
@@ -482,7 +489,7 @@ void mainClass::countValue( saDIRECTION dir )
 		  XPLMSetDatai( com1StbyRef, XPLMGetDatai(com1StbyRef) - (diff) * 100);
 	  }
     }
-    else if( 2 == psaitekX52ProClass->getActivePage() )              // COM2 Standby
+    else if( ID_PAGE_COM2NAV2 == psaitekX52ProClass->getActivePage() )              // COM2 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...COM2 standby, Hz!" );
 
@@ -499,7 +506,7 @@ void mainClass::countValue( saDIRECTION dir )
   {
     if( debug ) logLine( "<mainClass::countValue> Value bottom right left value..." );
     diff *= 100;                                                     // Kiloherz stellen
-    if( 1 == psaitekX52ProClass->getActivePage() )                   // NAV1 Standby
+    if( ID_PAGE_COM1NAV1 == psaitekX52ProClass->getActivePage() )                   // NAV1 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...NAV1 standby, kHz!" );
       XPLMSetDatai( nav1StbyRef, XPLMGetDatai(nav1StbyRef) + diff  );// Stellen
@@ -510,7 +517,7 @@ void mainClass::countValue( saDIRECTION dir )
 	  else if(XPLMGetDatai(nav1StbyRef) < 10800) // reach the lower limit
 		  XPLMSetDatai( nav1StbyRef, XPLMGetDatai(nav1StbyRef) + 1000);
     }
-    else if( 2 == psaitekX52ProClass->getActivePage() )              // NAV2 Standby
+    else if( ID_PAGE_COM2NAV2 == psaitekX52ProClass->getActivePage() )              // NAV2 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...NAV2 standby, kHz!" );
       XPLMSetDatai( nav2StbyRef, XPLMGetDatai(nav2StbyRef) + diff  );// Stellen
@@ -527,7 +534,7 @@ void mainClass::countValue( saDIRECTION dir )
   {
 	  diff*=5; // Added by Cmoirv : 50 kHz spacing
     if( debug ) logLine( "<mainClass::countValue> Value bottom right right value..." );
-    if( 1 == psaitekX52ProClass->getActivePage() )                   // NAV1 Standby
+    if( ID_PAGE_COM1NAV1 == psaitekX52ProClass->getActivePage() )                   // NAV1 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...NAV1 standby, Hz!" );
 
@@ -540,7 +547,7 @@ void mainClass::countValue( saDIRECTION dir )
 	  }
 	   
     }
-    else if( 2 == psaitekX52ProClass->getActivePage() )              // NAV2 Standby
+    else if( ID_PAGE_COM2NAV2 == psaitekX52ProClass->getActivePage() )              // NAV2 Standby
     {
       if( debug ) logLine( "<mainClass::countValue> ...NAV2 standby, Hz!" );
 
@@ -555,23 +562,34 @@ void mainClass::countValue( saDIRECTION dir )
   }// Added transponder selection by Cmoirv 
   else if( currCursorSelect == saSEL_TPR_THDS ) 
   {
-	  transponder.setThousands(transponder.getThousands() + diff);
+	  transponder->setThousands(transponder->getThousands() + diff);
   }
   else if( currCursorSelect == saSEL_TPR_HDS ) 
   {
-	  transponder.setHundreds(transponder.getHundreds() + diff);
+	  transponder->setHundreds(transponder->getHundreds() + diff);
   }
   else if( currCursorSelect == saSEL_TPR_TENS ) 
   {
-	  transponder.setTens(transponder.getTens() + diff);
+	  transponder->setTens(transponder->getTens() + diff);
   }
   else if( currCursorSelect == saSEL_TPR_UNTS ) 
   {
-	  transponder.setUnits(transponder.getUnits() + diff);
+	  transponder->setUnits(transponder->getUnits() + diff);
   }
   else if( currCursorSelect == saSEL_TPR_MODE ) 
   {
-	  transponder.setMode(transponder.getMode() + diff);
+	  transponder->setMode(transponder->getMode() + diff);
+  }
+  else if( currCursorSelect == saSEL_NONE ) 
+  {
+	  if( ID_PAGE_NAV1 == psaitekX52ProClass->getActivePage() )     // NAV1 
+	  {
+		nav1->countValue(dir);
+	  }
+	  else if( ID_PAGE_NAV2 == psaitekX52ProClass->getActivePage()) // NAV2 
+	  {
+		nav2->countValue(dir);
+	  }  
   }
 }
 
@@ -586,14 +604,14 @@ void mainClass::changeFrequence( void )
   // erst mal rauskriegen, wo getauscht werden soll
   if( currCursorSelect == saSEL_TOPLEFT )                            // COM1 oder COM2
   {
-    if( 1 == psaitekX52ProClass->getActivePage() )                   // COM1
+    if( ID_PAGE_COM1NAV1 == psaitekX52ProClass->getActivePage() )                   // COM1
     {
       if( debug ) logLine( "<changeFrequence> COM1" );
       standby = XPLMGetDatai(com1StbyRef);                           // Standby sichern
       XPLMSetDatai( com1StbyRef, XPLMGetDatai(com1Ref) );            // aktiv auf standby
       XPLMSetDatai( com1Ref, standby );                              // standby auf aktiv
     }
-    else if( 2 == psaitekX52ProClass->getActivePage() )              // COM2
+    else if( ID_PAGE_COM2NAV2 == psaitekX52ProClass->getActivePage() )              // COM2
     {
       if( debug ) logLine( "<changeFrequence> COM2" );
       standby = XPLMGetDatai(com2StbyRef);                           // Standby sichern
@@ -603,14 +621,14 @@ void mainClass::changeFrequence( void )
   }
   else if( currCursorSelect == saSEL_TOPRIGHT )                      // NAV1 oder NAV2
   {
-    if( 1 == psaitekX52ProClass->getActivePage() )                   // nav1
+    if( ID_PAGE_COM1NAV1 == psaitekX52ProClass->getActivePage() )                   // nav1
     {
       if( debug ) logLine( "<changeFrequence> NAV1" );
       standby = XPLMGetDatai(nav1StbyRef);                           // Standby sichern
       XPLMSetDatai( nav1StbyRef, XPLMGetDatai(nav1Ref) );            // aktiv auf standby
       XPLMSetDatai( nav1Ref, standby );                              // standby auf aktiv
     }
-    else if( 2 == psaitekX52ProClass->getActivePage() )              // nav2
+    else if( ID_PAGE_COM2NAV2 == psaitekX52ProClass->getActivePage() )              // nav2
     {
       if( debug ) logLine( "<changeFrequence> NAV2" );
       standby = XPLMGetDatai(nav2StbyRef);                           // Standby sichern
@@ -619,6 +637,7 @@ void mainClass::changeFrequence( void )
     }
   }
 }
+
 
 //#############################################################################
 // Auswahl auf der Seite ändern
@@ -640,8 +659,8 @@ void mainClass::cycleSelection( saDIRECTION dir )
   }
   //##########################################################
   switch(activePage){
-  case 1:
-  case 2:
+  case ID_PAGE_COM1NAV1:
+  case ID_PAGE_COM2NAV2:
 	  switch( currCursorSelect )                                         // WAS ist denn schon selektiert?
 	  {
 	  case saSEL_NONE:                                                   // nix selektiert
@@ -689,7 +708,7 @@ void mainClass::cycleSelection( saDIRECTION dir )
 	  }
 	  if( debug ) logLine( "<mainClass::cycleSelection>: " + getStringForSelectionName( currCursorSelect ) );
 	  break;
-  case 4: // Added count for QNH by Cmoirv
+  case ID_PAGE_QNH: // Added count for QNH by Cmoirv
 	 if( dir == saCOUNT_UP )
 	 {
 		 XPLMSetDataf(barometer_setting, XPLMGetDataf(barometer_setting) + 0.01f);
@@ -707,15 +726,16 @@ void mainClass::cycleSelection( saDIRECTION dir )
 		 }
 	 }
 	  break;
-  case 5: // Added transponder selection by Cmoirv
+  case ID_PAGE_TRANSPONDER: // Added transponder selection by Cmoirv
 	  switch( currCursorSelect )                                        
 	  {
-	  case saSEL_NONE:                                                   
+	  case saSEL_NONE:
+	  default: // in case of currCursorSelect is not in the value for transponder
 		if( dir == saCOUNT_UP )                                          
 		  currCursorSelect = saSEL_TPR_MODE;
 		else
 		{
-			if(transponder.getMode() != TRANSPONDER_OFF)
+			if(transponder->getMode() != TRANSPONDER_OFF)
 			{
 				currCursorSelect = saSEL_TPR_THDS;
 			}
@@ -751,7 +771,7 @@ void mainClass::cycleSelection( saDIRECTION dir )
 		  currCursorSelect = saSEL_TPR_MODE;
 		break;
 	  case saSEL_TPR_MODE:    
-		  if(transponder.getMode() != TRANSPONDER_OFF)
+		  if(transponder->getMode() != TRANSPONDER_OFF)
 		  {
 			if( dir == saCOUNT_UP )                                          
 			  currCursorSelect = saSEL_TPR_UNTS;
@@ -762,6 +782,13 @@ void mainClass::cycleSelection( saDIRECTION dir )
 			currCursorSelect = saSEL_NONE;
 		break;
 	  }
+  case ID_PAGE_NAV1:
+	  nav1->countValue(dir);
+	  break;
+
+  case ID_PAGE_NAV2:
+	  nav2->countValue(dir);
+	  break;
   }
   doMFDDisplay();                                                    // sofort anzeigen!
 }
