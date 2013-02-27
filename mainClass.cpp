@@ -379,7 +379,7 @@ float mainClass::doMFDDisplay( void )
 		return( float(0.5) );                                           
 		break;
 
-	case ID_PAGE_AUTOPILOT:           // Added obs selection for nav 2 by Cmoirv   
+	case ID_PAGE_AUTOPILOT:           // Added autopilot by Cmoirv   
 		autopilot->doMFDDisplay(psaitekX52ProClass);
 
 		return( float(0.5) );                                           
@@ -598,7 +598,16 @@ void mainClass::countValue( saDIRECTION dir )
 		else if( ID_PAGE_NAV2 == psaitekX52ProClass->getActivePage()) // NAV2 
 		{
 			nav2->countValue(dir);
-		}  
+		}
+		else if( ID_PAGE_AUTOPILOT == psaitekX52ProClass->getActivePage()) // NAV2 
+		{
+			autopilot->countValue(dir);
+		}
+	}
+	else if( currCursorSelect == saSEL_AP_MODE || currCursorSelect == saSEL_AP_VERTICAL_SPEED || currCursorSelect == saSEL_AP_ALTITUDE 
+		|| currCursorSelect == saSEL_AP_SPEED || currCursorSelect == saSEL_AP_HEADING ) 
+	{
+		autopilot->countValue(dir);
 	}
 }
 
@@ -798,6 +807,26 @@ void mainClass::cycleSelection( saDIRECTION dir )
 	case ID_PAGE_NAV2:
 		nav2->countValue(dir);
 		break;
+	case ID_PAGE_AUTOPILOT:
+		switch(autopilot->cycleSelection((int)dir, (int)currCursorSelect)){
+		case 12:
+			currCursorSelect = saSEL_AP_MODE;
+			break;
+		case 13:
+			currCursorSelect = saSEL_AP_VERTICAL_SPEED;
+			break;
+		case 14:
+			currCursorSelect = saSEL_AP_ALTITUDE;
+			break;
+		case 15:
+			currCursorSelect = saSEL_AP_SPEED;
+			break;
+		case 16:
+			currCursorSelect = saSEL_AP_HEADING;
+			break;
+		default:
+			currCursorSelect = saSEL_NONE;
+		}
 	}
 	doMFDDisplay();                                                    // sofort anzeigen!
 }
@@ -853,6 +882,11 @@ void mainClass::softButton( DWORD btns )
 	case saSEL_TPR_TENS:                                       
 	case saSEL_TPR_UNTS:
 	case saSEL_TPR_MODE:
+	case saSEL_AP_MODE:
+	case saSEL_AP_VERTICAL_SPEED:
+	case saSEL_AP_ALTITUDE:
+	case saSEL_AP_SPEED:
+	case saSEL_AP_HEADING:
 		if( btns & SoftButton_Select )                                   // Wechsel der Betriebsart (Ändern - zum Ändern wählen)
 			if( upDownMode == saUD_SELECT )                                // Bin ich noch im Select-Mode?
 				upDownMode = saUD_VALUE;                                     // dann mal in den Änderungsmodus
