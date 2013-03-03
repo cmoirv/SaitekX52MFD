@@ -49,6 +49,18 @@
     <ClCompile Include="AutoPilot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AltitudeSelection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HeadingSelection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SpeedSelection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VerticalSpeedSelection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dllMain.hpp">
@@ -88,6 +100,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AutoPilot.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AltitudeSelection.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HeadingSelection.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SpeedSelection.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VerticalSpeedSelection.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DataSelection.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

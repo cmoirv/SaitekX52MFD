@@ -169,11 +169,11 @@ bool saitekX52ProClass::stickFuncInit( IN const wstring& appName )
 	
     setString( 0, 0, wstring( L"  X-Plane MFD   " ) );
     setString( 0, 1, wstring( L" Saitek X52 Pro " ) );
-    setString( 0, 2, wstring( L"  D. Marciniak  " ) );
+    setString( 0, 2, wstring( L"  D. Marciniak / H. Lemoine  " ) );
 		
-    setString( 1, 0, wstring( L"  Version 2.0  " ) );
-    setString( 1, 1, wstring( L"     06/2012   " ) );
-    setString( 2, 1, wstring( L"    H.LEMOINE  " ) );
+    setString( 1, 0, wstring( L"  Version 3.0  " ) );
+    setString( 1, 1, wstring( L"     03/2013   " ) );
+
     if( debug ) logLine( "<saitekX52ProClass::stickFuncInit> Add pages for MFD... ");
   }
   catch( mfdException& _ex )

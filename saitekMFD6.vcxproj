@@ -146,13 +146,14 @@ if exist "P:\saitekMFD.log" del /Q "P:\saitekMFD.log"
       <Version>5</Version>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
       <CLRThreadAttribute>MTAThreadingAttribute</CLRThreadAttribute>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -164,21 +165,28 @@ if exist "P:\saitekMFD.log" del /Q "P:\saitekMFD.log"
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AltitudeSelection.cpp" />
     <ClCompile Include="AutoPilot.cpp" />
     <ClCompile Include="dllMain.cpp" />
+    <ClCompile Include="HeadingSelection.cpp" />
     <ClCompile Include="logThreadClass.cpp" />
     <ClCompile Include="mainClass.cpp" />
     <ClCompile Include="mfdException.cpp" />
     <ClCompile Include="Navs.cpp" />
     <ClCompile Include="pluginConfigClass.cpp" />
     <ClCompile Include="saitekX52ProClass.cpp" />
+    <ClCompile Include="SpeedSelection.cpp" />
     <ClCompile Include="TimeManagement.cpp" />
     <ClCompile Include="Transponder.cpp" />
+    <ClCompile Include="VerticalSpeedSelection.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AltitudeSelection.hpp" />
     <ClInclude Include="AutoPilot.hpp" />
     <ClInclude Include="DataManagement.hpp" />
+    <ClInclude Include="DataSelection.hpp" />
     <ClInclude Include="dllMain.hpp" />
+    <ClInclude Include="HeadingSelection.hpp" />
     <ClInclude Include="logThreadClass.hpp" />
     <ClInclude Include="mainClass.hpp" />
     <ClInclude Include="mfdException.hpp" />
@@ -187,8 +195,10 @@ if exist "P:\saitekMFD.log" del /Q "P:\saitekMFD.log"
     <ClInclude Include="projectCommon.h" />
     <ClInclude Include="projectTypedefs.hpp" />
     <ClInclude Include="saitekX52ProClass.hpp" />
+    <ClInclude Include="SpeedSelection.hpp" />
     <ClInclude Include="TimeManagement.hpp" />
     <ClInclude Include="Transponder.hpp" />
+    <ClInclude Include="VerticalSpeedSelection.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\..\XPSDK201\SDK\Libraries\Win\XPLM.lib" />

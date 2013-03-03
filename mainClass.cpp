@@ -382,7 +382,7 @@ float mainClass::doMFDDisplay( void )
 	case ID_PAGE_AUTOPILOT:           // Added autopilot by Cmoirv   
 		autopilot->doMFDDisplay(psaitekX52ProClass);
 
-		return( float(0.5) );                                           
+		return( float(0.5) );                                        
 		break;
 	default:
 		logLine( "<mainClass::doMFDDisplay>: Invalid MFD-Page!" );

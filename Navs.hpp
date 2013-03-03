@@ -1,6 +1,5 @@
 #include "DataManagement.hpp"
-#include "TimeManagement.hpp"
-#include <math.h>
+#include "HeadingSelection.hpp"
 
 #ifndef DEF_NAVS
 #define DEF_NAVS
@@ -39,10 +38,7 @@ private:
 	// id of nav (nav 1 or 2)
 	saNAV _idNav;
 
-	// degree amount to add or substitute
-	float _obs_deg_amount;
-
-	TimeManagement *_pTimeManagement;
+	HeadingSelection *_pHeadingSelection;
 
 public:
 	

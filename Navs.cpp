@@ -9,9 +9,8 @@ wchar_t *displayFormatDiffNav[1] =
 Navs::Navs(saNAV nav){
 
 	_idNav = nav;
-	_obs_deg_amount = 20;
 
-	_pTimeManagement = new TimeManagement();
+	_pHeadingSelection = new HeadingSelection();
 
 	if(nav == NAV1){
 
@@ -34,21 +33,9 @@ Navs::Navs(saNAV nav){
 //#############################################################################
 void Navs::countValue(int dir){
 
-	_obs_deg_amount = (float)(_pTimeManagement->getIntervalTimeMillis()/1000);
-
-	if(_obs_deg_amount < 0.4){
-		_obs_deg_amount = 20;
-	}
-	else if(_obs_deg_amount < 1){
-		_obs_deg_amount = 5;
-	}
-	else {
-		_obs_deg_amount = 1;
-	}
-
 	if( dir == saCOUNT_UP )
 	{
-		XPLMSetDataf(_obs_nav, XPLMGetDataf(_obs_nav) + _obs_deg_amount);
+		XPLMSetDataf(_obs_nav, XPLMGetDataf(_obs_nav) + _pHeadingSelection->getDataDifference());
 		if(XPLMGetDataf(_obs_nav) >= 361)
 		{
 			XPLMSetDataf(_obs_nav, XPLMGetDataf(_obs_nav) - 360.0f);
@@ -56,7 +43,7 @@ void Navs::countValue(int dir){
 	}
 	else
 	{
-		XPLMSetDataf(_obs_nav, XPLMGetDataf(_obs_nav) - _obs_deg_amount);
+		XPLMSetDataf(_obs_nav, XPLMGetDataf(_obs_nav) - _pHeadingSelection->getDataDifference());
 		if(XPLMGetDataf(_obs_nav) <= 1)
 		{ 
 			XPLMSetDataf(_obs_nav, XPLMGetDataf(_obs_nav) + 360.0f);

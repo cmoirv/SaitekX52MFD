@@ -1,4 +1,9 @@
 #include "DataManagement.hpp"
+#include "HeadingSelection.hpp"
+#include "SpeedSelection.hpp"
+#include "AltitudeSelection.hpp"
+#include "VerticalSpeedSelection.hpp"
+
 
 #ifndef DEF_AUTOPILOT
 #define DEF_AUTOPILOT
@@ -45,10 +50,17 @@ private :
 	XPLMDataRef _heading;
 	XPLMDataRef _isMachSpeed;
 
+	// objects to improve selectionnability
+	HeadingSelection		*_pHeadingSelection;
+	SpeedSelection			*_pSpeedSelection;
+	AltitudeSelection		*_pAltitudeSelection;
+	VerticalSpeedSelection	*_pVerticalSpeedSelection;
+	
+
 public:
 	AutoPilot();
 	void doMFDDisplay( saitekX52ProClass *psaitekX52ProClass ); 
 	void countValue(int dir);
-	int AutoPilot::cycleSelection( int dir, int currCursorSelect);
+	int cycleSelection( int dir, int currCursorSelect);
 };
 #endif
