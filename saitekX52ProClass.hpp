@@ -50,13 +50,13 @@ public:
   bool registerSoftButtonCalback( dmSoftButtonCallback *, void * );  // Neue Callbackfunktion registrieren
   bool registerPageChangeCallback( dmPageChangeCallback *, void *);  // neue Callbackfunktion registrieren
   //void* getDevice( int dev );
-  int addPage( int , std::wstring& , bool );                         // Füge eine Seite auf dem MFD hinzu
-  int delPage( int index );                                          // entferne eine Seite vom MFD
+  int addPage( DWORD , std::wstring& , bool );                         // Füge eine Seite auf dem MFD hinzu
+  int delPage( DWORD index );                                          // entferne eine Seite vom MFD
   bool delAllPages( void );                                          // entferne alle Seiten vom MFD
-  int getActivePage( void );                                         // gib mir die aktive Seitennummer 
-  int setActivePage( int );                                          // setze die aktive Seite
-  bool setString( int, int, std::wstring& );                         // setze einen String auf Position Seite,Zeile
-  int setLed( int, saLED, saColor, saBlink );                        // Setze eine LED mit einer Farbe, blinkend oder nichtblinkend
+  DWORD getActivePage( void );                                         // gib mir die aktive Seitennummer 
+  int setActivePage( DWORD );                                          // setze die aktive Seite
+  bool setString( DWORD, DWORD, std::wstring& );                         // setze einen String auf Position Seite,Zeile
+  int setLed( DWORD, saLED, saColor, saBlink );                        // Setze eine LED mit einer Farbe, blinkend oder nichtblinkend
   saLedStat& getLedStat( saLED );                                    // Gib eine referenz auf Status von LED
   bool makeAllLedBlink( bool );                                      // ale LED auf Blinken pruefen, bool=true setzt auf jeden fall 
   void setLedStat( saLED, saLedStat& );                              // setze den Status ohne weitere Maßnahme
@@ -71,8 +71,8 @@ private:
   void getVColors( saColor, int&, int& );                            // gibt on/off fuer die Farben zurück
   logThreadClass *pLogThreadClass;                                   // Speicher für das Log Objekt
   void *gDevice;                                                     // Zeiger auf SAITEK Device
-  int pages[STUECK_MAXPAGES];                                        // Array für MFD Seiten
-  int activePage;                                                    // Welche Seite ist aktiv?
+  DWORD pages[STUECK_MAXPAGES];                                        // Array für MFD Seiten
+  DWORD activePage;                                                    // Welche Seite ist aktiv?
   dmSoftButtonCallback *softButtonCb;                                // Speicher für eigene Callback-Routine
   void *softButtonCtx;                                               // Zeiger
   dmPageChangeCallback *pageChangeCb;                                // Speicher für eigene Callback-Routine

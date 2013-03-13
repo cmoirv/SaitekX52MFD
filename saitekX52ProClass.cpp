@@ -202,7 +202,7 @@ bool saitekX52ProClass::stickFuncDeinit()
 //#############################################################################
 // fuegt eine Seite hinzu, falls noch nicht existent
 //#############################################################################
-int saitekX52ProClass::addPage( int index, wstring& name, bool active )
+int saitekX52ProClass::addPage( DWORD index, wstring& name, bool active )
 {
   HRESULT hr;
   
@@ -215,7 +215,7 @@ int saitekX52ProClass::addPage( int index, wstring& name, bool active )
   {
     throw mfdException( "<saitekX52ProClass::addPage> Page exist, delete first!" );
   }
-  if( hr = AddPage( gDevice, DWORD(index), (wchar_t *)name.c_str() , active) )
+  if( hr = AddPage( gDevice, index, (wchar_t *)name.c_str() , active) )
   {
     throw mfdException( "<saitekX52ProClass::addPage> Page can not added!" );
   }
@@ -227,7 +227,7 @@ int saitekX52ProClass::addPage( int index, wstring& name, bool active )
 //#############################################################################
 // entfernt eine Seite, falls existent
 //#############################################################################
-int saitekX52ProClass::delPage( int index )
+int saitekX52ProClass::delPage( DWORD index )
 {
   string msg;
 
@@ -277,7 +277,7 @@ bool saitekX52ProClass::delAllPages()
 //#############################################################################
 // Setze String in Page (Seitennummer und Index setzen)
 //#############################################################################
-bool saitekX52ProClass::setString( int page, int index, std::wstring& line )
+bool saitekX52ProClass::setString( DWORD page, DWORD index, std::wstring& line )
 {
   HRESULT hr;
 
@@ -457,7 +457,7 @@ bool saitekX52ProClass::makeAllLedBlink( bool alwaysSet )
 // LED setzen...
 // 	HRESULT SetLed( IN void* hDevice, IN DWORD dwPage, IN DWORD dwIndex, IN DWORD dwValue)
 //#############################################################################
-int saitekX52ProClass::setLed(int page, saLED led, saColor value, saBlink bl )
+int saitekX52ProClass::setLed(DWORD page, saLED led, saColor value, saBlink bl )
 {
   int idGreen,idRed;
   string msg;
@@ -675,7 +675,7 @@ void saitekX52ProClass::softButton( void* device, DWORD btns )
 //#############################################################################
 // Gib aktive Page zurück
 //#############################################################################
-int saitekX52ProClass::getActivePage(void)
+DWORD saitekX52ProClass::getActivePage(void)
 {
   return( activePage );
 }
@@ -683,7 +683,7 @@ int saitekX52ProClass::getActivePage(void)
 //#############################################################################
 // Gib aktive Page zurück und setze neue Seite
 //#############################################################################
-int saitekX52ProClass::setActivePage( int page )
+int saitekX52ProClass::setActivePage( DWORD page )
 {
   int old = activePage;
   activePage = page;

@@ -548,7 +548,7 @@ bool pluginConfigClass::computeLine( std::string& _inLine, std::string& _vName, 
     logLine( "<pluginConfigClass::computeLine>: Found: empty line => ignore..." );
     return(false);
   }
-  pos = tempString.find("=");                                                  // suche  char 
+  pos = (int)tempString.find("=");                                                  // suche  char 
   if( pos == string::npos )
   {
     errorLine( "<pluginConfigClass::computeLine>: Not Found: Char equal => ignore..." );
